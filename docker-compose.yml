@@ -1,0 +1,102 @@
+version: '3.9'
+
+services:
+  migrate:
+    image: meetingbutler:local
+    container_name: meetingbutler-migrate
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - "node /app/node_modules/prisma/build/index.js migrate deploy"
+    environment:
+      DATABASE_URL: postgresql://meetingbutler:meetingbutler@postgres:5432/meetingbutler
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  app:
+    build: .
+    container_name: meetingbutler-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://meetingbutler:meetingbutler@postgres:5432/meetingbutler
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      # Mail credentials — loaded from .env file
+      MAIL_HOST: ${MAIL_HOST}
+      IMAP_HOST: ${IMAP_HOST}
+      IMAP_PORT: ${IMAP_PORT}
+      IMAP_SECURE: ${IMAP_SECURE}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_SECURE: ${SMTP_SECURE}
+      IMAP_ADMIN_USER: ${IMAP_ADMIN_USER}
+      IMAP_ADMIN_PASSWORD: ${IMAP_ADMIN_PASSWORD}
+      SMTP_ADMIN_USER: ${SMTP_ADMIN_USER}
+      SMTP_ADMIN_PASSWORD: ${SMTP_ADMIN_PASSWORD}
+      IMAP_MEETINGS_USER: ${IMAP_MEETINGS_USER}
+      IMAP_MEETINGS_PASSWORD: ${IMAP_MEETINGS_PASSWORD}
+      SMTP_MEETINGS_USER: ${SMTP_MEETINGS_USER}
+      SMTP_MEETINGS_PASSWORD: ${SMTP_MEETINGS_PASSWORD}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      MEETINGS_EMAIL: ${MEETINGS_EMAIL}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL}
+      DEFAULT_FROM_NAME: ${DEFAULT_FROM_NAME}
+      OPENAI_KEY: ${OPENAI_KEY}
+    volumes:
+      - uploads:/app/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/admin/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: meetingbutler-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: meetingbutler
+      POSTGRES_USER: meetingbutler
+      POSTGRES_PASSWORD: meetingbutler
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U meetingbutler -d meetingbutler"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5433:5432"
+
+  redis:
+    image: redis:7-alpine
+    container_name: meetingbutler-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "6380:6379"
+
+volumes:
+  pgdata:
+  redisdata:
+  uploads:

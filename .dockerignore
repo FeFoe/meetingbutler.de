@@ -1,72 +1,7 @@
-# =========================
-# Node.js
-# =========================
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# =========================
-# Build output
-# =========================
-dist/
-build/
-out/
-*.tsbuildinfo
-
-# =========================
-# Environment variables
-# =========================
+node_modules
+dist
+.git
 .env
-.env.*
-!.env.example
-
-# =========================
-# Logs
-# =========================
-logs/
 *.log
-
-# =========================
-# OS / Editor
-# =========================
-.DS_Store
-Thumbs.db
-
-.vscode/
-.idea/
-
-# =========================
-# Prisma
-# =========================
-prisma/migrations/
-# keep schema if needed:
-!prisma/schema.prisma
-
-# =========================
-# Local data
-# =========================
-data/
-./data/
-
-# =========================
-# Coverage / testing
-# =========================
-coverage/
-.nyc_output/
-
-# =========================
-# Temporary files
-# =========================
-tmp/
-temp/
-
-# =========================
-# Optional: lockfiles (keep if you want reproducible builds)
-# =========================
-# package-lock.json
-# yarn.lock
-# pnpm-lock.yaml
-
-/.claude
+data/uploads
+.claude

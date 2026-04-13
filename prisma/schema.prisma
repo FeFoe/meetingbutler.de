@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  events    Event[]
+
+  @@map("users")
+}
+
+model Event {
+  id             String        @id @default(cuid())
+  uid            String        @unique
+  sequence       Int           @default(0)
+  title          String
+  startDatetime  DateTime
+  endDatetime    DateTime
+  timezone       String        @default("Europe/Berlin")
+  location       String?
+  description    String?
+  organizerEmail String
+  sourceEmailId  String?
+  threadId       String?
+  status         String        @default("active")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  userId         String?
+  user           User?         @relation(fields: [userId], references: [id])
+  rawEmail       RawEmail?     @relation(fields: [sourceEmailId], references: [id])
+  thread         EmailThread?  @relation(fields: [threadId], references: [id])
+  attachments    Attachment[]
+  eventDetails   EventDetail?
+  auditLogs      AuditLog[]
+
+  @@map("events")
+}
+
+model RawEmail {
+  id          String      @id @default(cuid())
+  messageId   String      @unique
+  inReplyTo   String?
+  references  String?
+  fromAddress String
+  toAddress   String
+  subject     String
+  bodyText    String?
+  bodyHtml    String?
+  receivedAt  DateTime    @default(now())
+  processed   Boolean     @default(false)
+  events      Event[]
+  attachments Attachment[]
+
+  @@map("raw_emails")
+}
+
+model EmailThread {
+  id                 String   @id @default(cuid())
+  normalizedThreadKey String  @unique
+  latestMessageId    String?
+  linkedEventId      String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  events             Event[]
+
+  @@map("email_threads")
+}
+
+model Attachment {
+  id           String    @id @default(cuid())
+  filename     String
+  contentType  String
+  size         Int
+  storagePath  String
+  rawEmailId   String?
+  eventId      String?
+  createdAt    DateTime  @default(now())
+  rawEmail     RawEmail? @relation(fields: [rawEmailId], references: [id])
+  event        Event?    @relation(fields: [eventId], references: [id])
+
+  @@map("attachments")
+}
+
+model EventDetail {
+  id           String  @id @default(cuid())
+  eventId      String  @unique
+  bookingCode  String?
+  hotelName    String?
+  address      String?
+  notes        String?
+  accessCodes  String?
+  rawJson      Json?
+  event        Event   @relation(fields: [eventId], references: [id])
+
+  @@map("event_details")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  eventId   String?
+  action    String
+  details   Json?
+  createdAt DateTime @default(now())
+  event     Event?   @relation(fields: [eventId], references: [id])
+
+  @@map("audit_logs")
+}
