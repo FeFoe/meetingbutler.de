@@ -59,7 +59,9 @@ export class LlmService {
 
   async extractEvent(subject: string, bodyText: string): Promise<ExtractedEvent | null> {
     const now = DateTime.now().setZone('Europe/Berlin');
-    const prompt = `You are an expert calendar assistant. Extract ALL relevant event information from the forwarded email below. Be thorough: capture every useful detail from the email and make reasonable inferences from context where information is implicit.
+    const prompt = `You are an expert personal assistant and calendar manager. A user has forwarded an email to you. Your job is to:
+1. Extract every factual detail from the email
+2. Enrich the event with context-aware inferences — things someone would need to know even if not explicitly stated
 
 Return ONLY valid JSON. No markdown, no explanation.
 
@@ -70,42 +72,107 @@ Email Subject: ${subject}
 Email Body:
 ${bodyText.slice(0, 8000)}
 
-INSTRUCTIONS:
-- "title": Short, clean, human-friendly event title. Include hotel/venue/company name if relevant.
-- "description": Write a COMPREHENSIVE, well-structured plain-text description. Include: what this event is, all relevant facts from the email, inferred context (e.g. for hotels: typical check-in procedure, what to bring), important numbers, any action items. This should be the single source of truth someone needs to attend or prepare for the event. Use clear sections separated by newlines. Be generous — include everything useful.
-- "start_datetime" / "end_datetime": ISO 8601 with timezone offset. Infer end as +1h if truly unknown (for hotel stays infer check-out date if present).
-- "timezone": IANA (e.g. Europe/Berlin). Infer from location/country if not explicit.
-- "location": Full address or venue name and city. Include country if international.
-- "participants": Email addresses or names mentioned as attendees, guests, or recipients.
-- "important_details": Extract every structured field you can find. Leave as empty string "" if not found — do NOT omit fields.
-  - "booking_code": Any booking/reservation/confirmation/ticket/order number
-  - "hotel_name": Hotel, venue, or place name
-  - "address": Complete postal address
-  - "notes": Check-in instructions, special conditions, what to bring, important reminders
-  - "access_codes": PINs, wifi passwords, door codes, locker codes
-  - "price": Total price or nightly rate with currency
-  - "cancellation_policy": Cancellation deadline and terms
-  - "contact": Phone number, email, or contact person at the venue
-  - "dress_code": If mentioned or inferable (e.g. business formal for board meeting)
-  - "parking": Parking info, parking codes, cost
-  - "dietary": Dietary options, meal info, breakfast included etc.
-  - "check_in": Check-in time or procedure
-  - "check_out": Check-out time or procedure
-  - "flight_number": Flight/train number if applicable
-  - "seat": Seat number if applicable
-  - "gate": Gate or platform if applicable
-  - "organizer": Name or company of event organizer
-  - "agenda": Meeting agenda or schedule if present
-  - "extra": Any other important information not captured elsewhere
-- "event_type": One of: meeting|hotel|flight|train|conference|dinner|concert|sport|travel|appointment|other
-- "confidence": 0.0–1.0
+═══════════════════════════════════════
+FIELD INSTRUCTIONS
+═══════════════════════════════════════
 
-Return JSON:
+"title"
+  Short, human-friendly name. Include the venue/company/flight. Examples:
+  "Hotel Stay – Marriott Berlin", "Flight LH441 Munich→London", "Team Kickoff – Acme GmbH"
+
+"description"
+  THIS IS THE MOST IMPORTANT FIELD. Write a thorough, well-organized plain-text briefing.
+  Structure it with clear headings (use ALL CAPS headers like OVERVIEW, WHAT TO BRING, etc.).
+
+  ALWAYS include these sections when applicable:
+
+  OVERVIEW
+    What is this event? Who organized it? What is the purpose?
+    Include all reference numbers, codes, and IDs from the email.
+
+  SCHEDULE
+    All times and dates — check-in, check-out, departure, arrival, session times.
+    Be explicit about timezone.
+
+  LOCATION & ACCESS
+    Full address, how to get there (infer if needed), parking, public transport hints.
+    Any access codes, PINs, wifi passwords, door codes.
+
+  WHAT TO BRING / PREPARE
+    List everything needed: ID, confirmation printout, payment method, dress code, equipment.
+    For hotels: always mention bringing ID and payment card.
+    For flights: remind about passport, check-in deadline, luggage limits if mentioned.
+    For meetings: mention any materials, agenda items, or preparation needed.
+    INFER standard requirements for the event type even if not mentioned.
+
+  BOOKING & PAYMENT
+    Price, payment method, booking codes, confirmation numbers, cancellation policy.
+
+  CONTACT
+    Phone numbers, emails, names of responsible staff or organizers.
+
+  INCLUDED / SERVICES
+    What is included (meals, parking, transfers, equipment).
+
+  IMPORTANT NOTES
+    Cancellation deadlines, late check-in procedures, special instructions, anything unusual.
+
+  ACTION ITEMS (if any)
+    Concrete things the user must do: confirm attendance, call ahead, bring documents, etc.
+
+  Do NOT use bullet points starting with "-". Use plain lines or numbered lists.
+  Be thorough. Include everything from the email. Infer realistic details for the event type.
+  The description is the single source of truth — make it self-contained.
+
+"start_datetime"
+  ISO 8601 with timezone offset. Use the event start (check-in time for hotels, departure for flights).
+
+"end_datetime"
+  ISO 8601. Use actual end if found (check-out for hotels, arrival for flights). Infer +1h only if completely unknown.
+
+"timezone"
+  IANA timezone. Infer from country/city in the email.
+
+"location"
+  Full address or venue + city + country. Always include country for international events.
+
+"participants"
+  Email addresses or full names explicitly mentioned as attendees, guests, or co-travelers.
+
+"important_details"
+  Extract each field carefully. If not found in the email, infer a reasonable value based on event type, or leave "".
+  - "booking_code": ALL booking/reservation/ticket/order/confirmation numbers (list all if multiple)
+  - "hotel_name": Hotel, venue, airline, or service provider name
+  - "address": Complete postal address including street, city, postcode, country
+  - "notes": Compiled key notes — check-in procedure, what to bring, important conditions
+  - "access_codes": ALL codes found — wifi password, parking code, PIN, locker, door code
+  - "price": Total amount with currency. Include nightly rate if relevant.
+  - "cancellation_policy": Exact cancellation deadline and penalty terms from the email
+  - "contact": Phone, email, or contact person name at the venue/company
+  - "dress_code": From email or inferred (e.g. "Business casual" for corporate dinner)
+  - "parking": Parking location, code, cost, instructions
+  - "dietary": Meals included, dietary options, meal times, restaurant info
+  - "check_in": Check-in time and any early/late check-in procedure
+  - "check_out": Check-out time and late check-out procedure
+  - "flight_number": Flight/train/bus number
+  - "seat": Seat or cabin number/class
+  - "gate": Gate, terminal, or platform
+  - "organizer": Full name and company of event organizer or booking party
+  - "agenda": Meeting agenda, conference schedule, or itinerary from the email
+  - "extra": All remaining useful info not captured above (loyalty numbers, special requests, etc.)
+
+"event_type"
+  One of: meeting | hotel | flight | train | conference | dinner | concert | sport | travel | appointment | other
+
+"confidence"
+  0.0–1.0 reflecting how certain you are about the datetime and key details
+
+Return JSON with all fields populated:
 {
   "title": "...",
-  "start_datetime": "...",
-  "end_datetime": "...",
-  "timezone": "...",
+  "start_datetime": "2026-01-01T15:00:00+01:00",
+  "end_datetime": "2026-01-04T11:00:00+01:00",
+  "timezone": "Europe/Berlin",
   "location": "...",
   "description": "...",
   "participants": [],
@@ -130,8 +197,8 @@ Return JSON:
     "agenda": "",
     "extra": ""
   },
-  "confidence": 0.0,
-  "event_type": "..."
+  "confidence": 0.9,
+  "event_type": "hotel"
 }`;
 
     try {

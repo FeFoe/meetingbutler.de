@@ -193,8 +193,11 @@ export class EventMatchProcessor {
 
     this.logger.log(`Created event id=${event.id} uid=${uid} title="${event.title}"`);
 
-    // Generate ICS
-    const icsContent = this.ics.generate(event, extracted.participants || []);
+    // Load stored details for ICS and email enrichment
+    const storedDetails = await this.prisma.eventDetail.findUnique({ where: { eventId: event.id } });
+
+    // Generate ICS with full details embedded
+    const icsContent = this.ics.generate(event, extracted.participants || [], storedDetails);
 
     // Send reply email
     await this.emailSend.sendEventEmail({
@@ -203,6 +206,7 @@ export class EventMatchProcessor {
       event,
       icsContent,
       attachmentIds,
+      eventDetails: storedDetails,
     });
 
     this.logger.log(`Sent new event email to ${fromAddress}`);
@@ -297,8 +301,11 @@ export class EventMatchProcessor {
       ...attachmentIds,
     ];
 
-    // Generate ICS
-    const icsContent = this.ics.generate(updatedEvent, []);
+    // Load updated details for ICS enrichment
+    const updatedDetails = await this.prisma.eventDetail.findUnique({ where: { eventId: existingEvent.id } });
+
+    // Generate ICS with full details embedded
+    const icsContent = this.ics.generate(updatedEvent, [], updatedDetails);
 
     // Send updated invite
     await this.emailSend.sendEventEmail({
@@ -307,6 +314,7 @@ export class EventMatchProcessor {
       event: updatedEvent,
       icsContent,
       attachmentIds: allAttachmentIds,
+      eventDetails: updatedDetails,
     });
 
     this.logger.log(`Sent update email to ${fromAddress}`);

@@ -8,7 +8,7 @@ export class IcsService {
 
   constructor(private config: ConfigService) {}
 
-  generate(event: any, participants: string[]): string {
+  generate(event: any, participants: string[], details?: any): string {
     const organizerEmail = this.config.get('DEFAULT_FROM_EMAIL', 'meetings@meetingbutler.de');
     const now = DateTime.utc();
     const dtstamp = this.formatUtcDate(now);
@@ -28,6 +28,9 @@ export class IcsService {
     // VTIMEZONE block
     lines.push(...this.buildVTimezone(tz, startDt));
 
+    // Build full ICS description: event description + compact detail appendix
+    const fullDescription = this.buildIcsDescription(event.description, details);
+
     // VEVENT
     lines.push('BEGIN:VEVENT');
     lines.push(`UID:${event.uid}`);
@@ -37,8 +40,8 @@ export class IcsService {
     lines.push(`DTEND;TZID=${tz}:${this.formatLocalDate(endDt)}`);
     lines.push(this.fold(`SUMMARY:${this.escapeText(event.title)}`));
 
-    if (event.description) {
-      lines.push(this.fold(`DESCRIPTION:${this.escapeText(event.description)}`));
+    if (fullDescription) {
+      lines.push(this.fold(`DESCRIPTION:${this.escapeText(fullDescription)}`));
     }
 
     if (event.location) {
@@ -61,6 +64,44 @@ export class IcsService {
 
     // Join with CRLF as per RFC5545
     return lines.join('\r\n') + '\r\n';
+  }
+
+  private buildIcsDescription(description: string | null, details: any): string {
+    const parts: string[] = [];
+
+    if (description?.trim()) {
+      parts.push(description.trim());
+    }
+
+    // Append a compact key-detail block so the ICS is self-contained
+    if (details) {
+      const kv = [
+        ['Booking', details.bookingCode],
+        ['Price', details.price],
+        ['Check-in', details.checkIn],
+        ['Check-out', details.checkOut],
+        ['Address', details.address],
+        ['Contact', details.contact],
+        ['Access codes', details.accessCodes],
+        ['Parking', details.parking],
+        ['Cancellation', details.cancellationPolicy],
+        ['Meals', details.dietary],
+        ['Dress code', details.dressCode],
+        ['Flight/Train', details.flightNumber],
+        ['Seat', details.seat],
+        ['Gate/Platform', details.gate],
+        ['Agenda', details.agenda],
+        ['Notes', details.notes],
+        ['Extra', details.extra],
+      ].filter(([, v]) => v && String(v).trim());
+
+      if (kv.length > 0) {
+        if (parts.length > 0) parts.push('\n---');
+        parts.push(...kv.map((pair) => `${pair[0]}: ${pair[1]}`));
+      }
+    }
+
+    return parts.join('\n');
   }
 
   private buildVTimezone(tz: string, refDate: DateTime): string[] {
