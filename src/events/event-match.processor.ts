@@ -147,19 +147,32 @@ export class EventMatchProcessor {
     });
 
     // Store event details
-    if (extracted.important_details) {
-      await this.prisma.eventDetail.create({
-        data: {
-          eventId: event.id,
-          bookingCode: extracted.important_details.booking_code || null,
-          hotelName: extracted.important_details.hotel_name || null,
-          address: extracted.important_details.address || null,
-          notes: extracted.important_details.notes || null,
-          accessCodes: extracted.important_details.access_codes || null,
-          rawJson: extracted as any,
-        },
-      });
-    }
+    const d = extracted.important_details || ({} as any);
+    await this.prisma.eventDetail.create({
+      data: {
+        eventId: event.id,
+        bookingCode: d.booking_code || null,
+        hotelName: d.hotel_name || null,
+        address: d.address || null,
+        notes: d.notes || null,
+        accessCodes: d.access_codes || null,
+        price: d.price || null,
+        cancellationPolicy: d.cancellation_policy || null,
+        contact: d.contact || null,
+        dressCode: d.dress_code || null,
+        parking: d.parking || null,
+        dietary: d.dietary || null,
+        checkIn: d.check_in || null,
+        checkOut: d.check_out || null,
+        flightNumber: d.flight_number || null,
+        seat: d.seat || null,
+        gate: d.gate || null,
+        organizer: d.organizer || null,
+        agenda: d.agenda || null,
+        extra: d.extra || null,
+        rawJson: extracted as any,
+      },
+    });
 
     // Associate attachments with event
     if (attachmentIds.length > 0) {
@@ -236,23 +249,30 @@ export class EventMatchProcessor {
 
     // Update event details if provided
     if (updated.important_details) {
+      const ud = updated.important_details as any;
+      const detailFields = {
+        notes: ud.notes ?? undefined,
+        bookingCode: ud.booking_code ?? undefined,
+        hotelName: ud.hotel_name ?? undefined,
+        address: ud.address ?? undefined,
+        accessCodes: ud.access_codes ?? undefined,
+        price: ud.price ?? undefined,
+        cancellationPolicy: ud.cancellation_policy ?? undefined,
+        contact: ud.contact ?? undefined,
+        parking: ud.parking ?? undefined,
+        dietary: ud.dietary ?? undefined,
+        checkIn: ud.check_in ?? undefined,
+        checkOut: ud.check_out ?? undefined,
+        organizer: ud.organizer ?? undefined,
+        agenda: ud.agenda ?? undefined,
+        extra: ud.extra ?? undefined,
+      };
+      // Remove undefined keys
+      const updateFields = Object.fromEntries(Object.entries(detailFields).filter(([, v]) => v !== undefined));
       await this.prisma.eventDetail.upsert({
         where: { eventId: existingEvent.id },
-        update: {
-          notes: updated.important_details.notes ?? null,
-          bookingCode: updated.important_details.booking_code ?? null,
-          hotelName: updated.important_details.hotel_name ?? null,
-          address: updated.important_details.address ?? null,
-          accessCodes: updated.important_details.access_codes ?? null,
-        },
-        create: {
-          eventId: existingEvent.id,
-          notes: updated.important_details.notes ?? null,
-          bookingCode: updated.important_details.booking_code ?? null,
-          hotelName: updated.important_details.hotel_name ?? null,
-          address: updated.important_details.address ?? null,
-          accessCodes: updated.important_details.access_codes ?? null,
-        },
+        update: updateFields,
+        create: { eventId: existingEvent.id, ...updateFields },
       });
     }
 

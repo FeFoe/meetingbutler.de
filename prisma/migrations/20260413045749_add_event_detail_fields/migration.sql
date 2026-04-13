@@ -1,0 +1,15 @@
+-- AlterTable
+ALTER TABLE "event_details" ADD COLUMN     "agenda" TEXT,
+ADD COLUMN     "cancellationPolicy" TEXT,
+ADD COLUMN     "checkIn" TEXT,
+ADD COLUMN     "checkOut" TEXT,
+ADD COLUMN     "contact" TEXT,
+ADD COLUMN     "dietary" TEXT,
+ADD COLUMN     "dressCode" TEXT,
+ADD COLUMN     "extra" TEXT,
+ADD COLUMN     "flightNumber" TEXT,
+ADD COLUMN     "gate" TEXT,
+ADD COLUMN     "organizer" TEXT,
+ADD COLUMN     "parking" TEXT,
+ADD COLUMN     "price" TEXT,
+ADD COLUMN     "seat" TEXT;

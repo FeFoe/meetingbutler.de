@@ -91,15 +91,29 @@ model Attachment {
 }
 
 model EventDetail {
-  id           String  @id @default(cuid())
-  eventId      String  @unique
-  bookingCode  String?
-  hotelName    String?
-  address      String?
-  notes        String?
-  accessCodes  String?
-  rawJson      Json?
-  event        Event   @relation(fields: [eventId], references: [id])
+  id                 String  @id @default(cuid())
+  eventId            String  @unique
+  bookingCode        String?
+  hotelName          String?
+  address            String?
+  notes              String?
+  accessCodes        String?
+  price              String?
+  cancellationPolicy String?
+  contact            String?
+  dressCode          String?
+  parking            String?
+  dietary            String?
+  checkIn            String?
+  checkOut           String?
+  flightNumber       String?
+  seat               String?
+  gate               String?
+  organizer          String?
+  agenda             String?
+  extra              String?
+  rawJson            Json?
+  event              Event   @relation(fields: [eventId], references: [id])
 
   @@map("event_details")
 }
