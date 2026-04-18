@@ -37,14 +37,14 @@ jobs:
             docker compose up -d --remove-orphans --force-recreate
 
             echo "-> Health check (waiting up to 60s for app to start)..."
-            sleep 20
+            sleep 15
             for i in 1 2 3 4 5 6; do
-              STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/admin/health || echo "000")
+              STATUS=$(docker compose exec -T app wget -qO- http://localhost:3000/api/admin/health > /dev/null 2>&1 && echo "200" || echo "000")
               if [ "$STATUS" = "200" ]; then
                 echo "Health check passed (attempt $i)"
                 break
               fi
-              echo "Health check attempt $i failed (HTTP $STATUS), retrying in 10s..."
+              echo "Health check attempt $i failed, retrying in 10s..."
               sleep 10
               if [ "$i" = "6" ]; then
                 echo "ERROR: Health check failed after 6 attempts — rolling back!"
