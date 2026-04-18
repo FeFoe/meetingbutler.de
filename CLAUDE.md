@@ -35,6 +35,7 @@ IMAP_MEETINGS_USER, IMAP_MEETINGS_PASSWORD
 SMTP_MEETINGS_USER, SMTP_MEETINGS_PASSWORD
 ADMIN_EMAIL, MEETINGS_EMAIL, DEFAULT_FROM_EMAIL, DEFAULT_FROM_NAME
 OPENAI_KEY
+ADMIN_DASHBOARD_PASSWORD
 ```
 
 ## API Endpoints (local)
@@ -42,3 +43,8 @@ OPENAI_KEY
 - http://localhost:3000/api/events
 - http://localhost:3000/api/admin/raw-emails
 - http://localhost:3000/api/admin/queues
+- http://localhost:3000/api/admin/stats — requires `X-Admin-Password` header (see `ADMIN_DASHBOARD_PASSWORD`)
+
+## Admin Dashboard
+- Local: http://localhost:3000/admin-dashboard.html
+- Password sent as `X-Admin-Password` request header (not query param — avoids server log exposure)

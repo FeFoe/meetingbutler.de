@@ -135,7 +135,7 @@
     document.getElementById('error-msg').textContent = '';
 
     try {
-      const res = await fetch(`/api/admin/stats?password=${encodeURIComponent(pw)}`);
+      const res = await fetch('/api/admin/stats', { headers: { 'X-Admin-Password': pw } });
       if (res.status === 401) {
         document.getElementById('error-msg').textContent = 'Falsches Passwort';
         return;
@@ -223,6 +223,7 @@
   function esc(s) {
     return String(s || '')
       .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
   }

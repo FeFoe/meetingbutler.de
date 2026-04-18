@@ -1,9 +1,10 @@
-import { Controller, Get, Query, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Controller, Get, Headers, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../common/prisma.service';
 import { AdminApiKeyGuard } from './admin-api-key.guard';
 
-const GPT_NANO_COST_PER_TOKEN = 0.000003; // EUR, gpt-5.4-nano approximation
+// OpenAI bills in USD; displayed as approximate EUR equivalent
+const GPT_NANO_COST_PER_TOKEN_USD = 0.000003; // gpt-5.4-nano ~$0.15/1M input tokens
 
 @Controller('admin')
 export class AdminController {
@@ -23,7 +24,7 @@ export class AdminController {
   }
 
   @Get('stats')
-  async stats(@Query('password') password: string) {
+  async stats(@Headers('x-admin-password') password: string) {
     const expected = this.config.get<string>('ADMIN_DASHBOARD_PASSWORD');
     if (!expected || password !== expected) {
       throw new UnauthorizedException('Falsches Passwort');
@@ -51,7 +52,7 @@ export class AdminController {
         totalUsers: users.length,
         totalEvents,
         totalTokens,
-        estimatedCostEur: +(totalTokens * GPT_NANO_COST_PER_TOKEN).toFixed(4),
+        estimatedCostEur: +(totalTokens * GPT_NANO_COST_PER_TOKEN_USD).toFixed(4),
       },
       users: rows,
     };
