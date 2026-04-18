@@ -125,9 +125,31 @@ export class EventMatchProcessor {
       return;
     }
 
+    // Idempotency: if this job is retried after a crash, reuse the existing thread/event
+    const existingThread = await this.prisma.emailThread.findUnique({
+      where: { normalizedThreadKey: messageId },
+      include: { events: { orderBy: { createdAt: 'desc' }, take: 1 } },
+    });
+
+    if (existingThread?.events?.length > 0) {
+      this.logger.warn(`Job retried: thread+event already exist for messageId=${messageId}, skipping DB writes`);
+      const existingEvent = existingThread.events[0];
+      const storedDetails = await this.prisma.eventDetail.findUnique({ where: { eventId: existingEvent.id } });
+      const relevantAttachmentIds = await this.filterAttachments(attachmentIds);
+      const pdfBuffer = this.pdf.generate(existingEvent, bodyText, storedDetails);
+      const icsContent = this.ics.generate(existingEvent, extracted.participants || [], storedDetails);
+      await this.emailSend.sendEventEmail({
+        to: fromAddress, isUpdate: false, event: existingEvent,
+        icsContent, attachmentIds: relevantAttachmentIds, eventDetails: storedDetails,
+        pdfBuffer, threadId: existingEvent.threadId ?? undefined,
+      });
+      this.logger.log(`Sent new event email to ${fromAddress} (retry path)`);
+      return;
+    }
+
     const uid = uuidv4();
 
-    // Create or get thread
+    // Create thread
     const thread = await this.prisma.emailThread.create({
       data: {
         normalizedThreadKey: messageId,
@@ -213,24 +235,31 @@ export class EventMatchProcessor {
     const relevantAttachmentIds = await this.filterAttachments(attachmentIds);
 
     // Generate PDF summary
+    this.logger.log('Generating PDF...');
     const pdfBuffer = this.pdf.generate(event, bodyText, storedDetails);
+    this.logger.log(`PDF generated: ${pdfBuffer?.length ?? 0} bytes`);
 
     // Generate ICS
     const icsContent = this.ics.generate(event, extracted.participants || [], storedDetails);
 
     // Send reply email
-    await this.emailSend.sendEventEmail({
-      to: fromAddress,
-      isUpdate: false,
-      event,
-      icsContent,
-      attachmentIds: relevantAttachmentIds,
-      eventDetails: storedDetails,
-      pdfBuffer,
-      threadId: event.threadId ?? undefined,
-    });
-
-    this.logger.log(`Sent new event email to ${fromAddress}`);
+    this.logger.log(`Sending event email to ${fromAddress}...`);
+    try {
+      await this.emailSend.sendEventEmail({
+        to: fromAddress,
+        isUpdate: false,
+        event,
+        icsContent,
+        attachmentIds: relevantAttachmentIds,
+        eventDetails: storedDetails,
+        pdfBuffer,
+        threadId: event.threadId ?? undefined,
+      });
+      this.logger.log(`Sent new event email to ${fromAddress}`);
+    } catch (emailErr) {
+      this.logger.error(`Failed to send event email to ${fromAddress}: ${emailErr.message}`, emailErr.stack);
+      throw emailErr;
+    }
   }
 
   private async applyUpdate(
