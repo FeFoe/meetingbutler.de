@@ -1,174 +1,424 @@
 <!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Meetingbutler – Aus E-Mails werden Kalendertermine</title>
+  <meta name="description" content="Leite Meeting-Bestätigungen einfach weiter. Meetingbutler erkennt die Details und schickt dir sofort eine Kalendereinladung zurück."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-<html class="light" lang="de"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Meetingbutler - Aus E-Mails werden Kalendertermine</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    "colors": {
-                        "on-tertiary-container": "#3980f4",
-                        "background": "#f7f9fb",
-                        "surface-container-high": "#e6e8ea",
-                        "surface": "#f7f9fb",
-                        "on-tertiary-fixed-variant": "#004395",
-                        "on-tertiary-fixed": "#001a42",
-                        "on-error-container": "#93000a",
-                        "surface-container-highest": "#e0e3e5",
-                        "on-surface-variant": "#45464d",
-                        "surface-tint": "#565e74",
-                        "outline-variant": "#c6c6cd",
-                        "on-secondary-fixed": "#0b1c30",
-                        "error-container": "#ffdad6",
-                        "on-secondary": "#ffffff",
-                        "on-error": "#ffffff",
-                        "surface-container": "#eceef0",
-                        "secondary-fixed": "#d3e4fe",
-                        "primary-fixed": "#dae2fd",
-                        "on-secondary-container": "#54647a",
-                        "on-primary-fixed": "#131b2e",
-                        "surface-bright": "#f7f9fb",
-                        "primary-fixed-dim": "#bec6e0",
-                        "tertiary-fixed-dim": "#adc6ff",
-                        "on-tertiary": "#ffffff",
-                        "on-surface": "#191c1e",
-                        "surface-dim": "#d8dadc",
-                        "error": "#ba1a1a",
-                        "inverse-surface": "#2d3133",
-                        "primary-container": "#131b2e",
-                        "on-primary-fixed-variant": "#3f465c",
-                        "on-secondary-fixed-variant": "#38485d",
-                        "on-background": "#191c1e",
-                        "tertiary-container": "#001a42",
-                        "inverse-on-surface": "#eff1f3",
-                        "surface-variant": "#e0e3e5",
-                        "tertiary": "#000000",
-                        "surface-container-low": "#f2f4f6",
-                        "secondary-fixed-dim": "#b7c8e1",
-                        "secondary-container": "#d0e1fb",
-                        "secondary": "#505f76",
-                        "outline": "#76777d",
-                        "surface-container-lowest": "#ffffff",
-                        "on-primary-container": "#7c839b",
-                        "inverse-primary": "#bec6e0",
-                        "tertiary-fixed": "#d8e2ff",
-                        "on-primary": "#ffffff",
-                        "primary": "#000000"
-                    },
-                    "borderRadius": {
-                        "DEFAULT": "0.125rem",
-                        "lg": "0.25rem",
-                        "xl": "0.5rem",
-                        "full": "0.75rem"
-                    },
-                    "fontFamily": {
-                        "headline": ["Inter"],
-                        "body": ["Inter"],
-                        "label": ["Inter"]
-                    }
-                }
-            }
-        }
-    </script>
-<style>
-        body { font-family: 'Inter', sans-serif; }
-    </style>
+    :root {
+      --navy:    #0b1120;
+      --navy2:   #111827;
+      --accent:  #3b7eff;
+      --accent2: #6fb3ff;
+      --sand:    #f5f3ef;
+      --muted:   #6b7280;
+      --border:  #e5e7eb;
+      --white:   #ffffff;
+      --radius:  12px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--white);
+      color: var(--navy);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── HERO ─────────────────────────────────────────── */
+    .hero {
+      background: var(--navy);
+      color: var(--white);
+      padding: clamp(5rem, 15vw, 9rem) 1.5rem clamp(4rem, 10vw, 7rem);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(59,126,255,.35) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 30% at 80% 90%, rgba(111,179,255,.12) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-inner { position: relative; max-width: 760px; margin: 0 auto; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      background: rgba(59,126,255,.15);
+      border: 1px solid rgba(59,126,255,.35);
+      color: var(--accent2);
+      font-size: .8rem;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      padding: .35rem .85rem;
+      border-radius: 100px;
+      margin-bottom: 2rem;
+    }
+    .badge-dot {
+      width: 6px; height: 6px;
+      background: var(--accent2);
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50%      { opacity: .3; }
+    }
+
+    h1 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: clamp(2.2rem, 6vw, 4rem);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -.02em;
+      margin-bottom: 1.4rem;
+      color: var(--white);
+    }
+    h1 em {
+      font-style: italic;
+      color: var(--accent2);
+    }
+
+    .hero-sub {
+      font-size: clamp(1rem, 2.5vw, 1.2rem);
+      color: rgba(255,255,255,.65);
+      max-width: 540px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.65;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: .6rem;
+      background: var(--accent);
+      color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: .9rem 2rem;
+      border-radius: var(--radius);
+      text-decoration: none;
+      transition: background .2s, transform .15s, box-shadow .2s;
+      box-shadow: 0 0 0 0 rgba(59,126,255,.5);
+    }
+    .btn-primary:hover {
+      background: #2a6eef;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(59,126,255,.4);
+    }
+    .btn-arrow { font-size: 1.1rem; transition: transform .2s; }
+    .btn-primary:hover .btn-arrow { transform: translateX(3px); }
+
+    .hero-hint {
+      margin-top: 1rem;
+      font-size: .82rem;
+      color: rgba(255,255,255,.4);
+    }
+
+    /* flow illustration */
+    .flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(.5rem, 3vw, 1.5rem);
+      margin-top: clamp(3rem, 8vw, 5rem);
+      flex-wrap: wrap;
+    }
+    .flow-card {
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: var(--radius);
+      padding: 1rem 1.4rem;
+      font-size: .85rem;
+      color: rgba(255,255,255,.7);
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      white-space: nowrap;
+    }
+    .flow-card .icon { font-size: 1.3rem; }
+    .flow-arrow { color: rgba(255,255,255,.25); font-size: 1.2rem; }
+
+    /* ── STEPS ───────────────────────────────────────── */
+    .steps {
+      background: var(--sand);
+      padding: clamp(4rem, 10vw, 7rem) 1.5rem;
+    }
+    .section-label {
+      text-align: center;
+      font-size: .78rem;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+    h2 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: clamp(1.7rem, 4vw, 2.4rem);
+      font-weight: 600;
+      letter-spacing: -.02em;
+      text-align: center;
+      color: var(--navy);
+      margin-bottom: clamp(2.5rem, 6vw, 4rem);
+      line-height: 1.2;
+    }
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .step-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 2rem;
+      border: 1px solid var(--border);
+      position: relative;
+    }
+    .step-num {
+      width: 2.2rem; height: 2.2rem;
+      background: var(--navy);
+      color: var(--white);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .8rem;
+      font-weight: 700;
+      margin-bottom: 1.2rem;
+    }
+    .step-card h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: .6rem;
+      line-height: 1.3;
+    }
+    .step-card p {
+      font-size: .9rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .step-card p strong {
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .step-card.highlight {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent), 0 8px 30px rgba(59,126,255,.08);
+    }
+
+    /* ── FEATURES ────────────────────────────────────── */
+    .features {
+      padding: clamp(4rem, 10vw, 7rem) 1.5rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+    }
+    .feat-card {
+      padding: 1.8rem;
+      border-radius: var(--radius);
+      background: var(--sand);
+      border: 1px solid transparent;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .feat-card:hover {
+      border-color: var(--border);
+      box-shadow: 0 4px 20px rgba(0,0,0,.06);
+    }
+    .feat-icon {
+      font-size: 1.6rem;
+      margin-bottom: 1rem;
+    }
+    .feat-card h4 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: .5rem;
+    }
+    .feat-card p {
+      font-size: .875rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ── CTA ─────────────────────────────────────────── */
+    .cta {
+      background: var(--navy2);
+      color: var(--white);
+      padding: clamp(4rem, 10vw, 7rem) 1.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 60% at 50% 100%, rgba(59,126,255,.2) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .cta-inner { position: relative; max-width: 560px; margin: 0 auto; }
+    .cta h2 { color: var(--white); }
+    .cta-address {
+      margin-top: 1.5rem;
+      font-size: .9rem;
+      color: rgba(255,255,255,.5);
+    }
+    .cta-address strong {
+      color: var(--accent2);
+      font-family: 'DM Sans', monospace;
+      font-size: 1rem;
+      display: block;
+      margin-bottom: .25rem;
+    }
+
+    /* ── FOOTER ──────────────────────────────────────── */
+    footer {
+      background: var(--navy);
+      border-top: 1px solid rgba(255,255,255,.08);
+      padding: 1.8rem 1.5rem;
+    }
+    .footer-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    footer span { font-size: .85rem; color: rgba(255,255,255,.35); }
+    .footer-links { display: flex; gap: 1.5rem; }
+    .footer-links a {
+      font-size: .85rem;
+      color: rgba(255,255,255,.45);
+      text-decoration: none;
+      transition: color .15s;
+    }
+    .footer-links a:hover { color: rgba(255,255,255,.85); }
+  </style>
 </head>
-<body class="bg-background text-on-surface antialiased">
-<!-- Hero Section -->
-<section class="pt-40 pb-24 px-8 max-w-7xl mx-auto flex flex-col items-center text-center">
-<h1 class="text-[3.5rem] font-bold tracking-tighter leading-tight max-w-4xl text-on-surface mb-6">
-            Aus E-Mails werden Kalendertermine — automatisch.
-        </h1>
-<p class="text-xl text-on-surface-variant max-w-2xl mb-12">
-            Leite Meeting-Bestätigungen einfach weiter. Meetingbutler erkennt die Details und schickt dir sofort eine Kalendereinladung.
-        </p>
-<button class="bg-on-tertiary-container text-on-primary px-8 py-4 rounded-md text-lg font-bold hover:opacity-90 transition-opacity shadow-[0_20px_40px_rgba(0,0,0,0.1)]">
-            Jetzt kostenlos testen
-        </button>
-<!-- Conceptual Illustration Space -->
-<div class="mt-20 w-full max-w-4xl h-80 rounded-xl bg-surface-container-low flex items-center justify-center relative overflow-hidden ring-1 ring-outline-variant/15">
-<div class="absolute inset-0 opacity-50 bg-gradient-to-br from-primary-fixed to-surface-container-low"></div>
-<img alt="Abstract concept of digital workflow" class="w-full h-full object-cover mix-blend-overlay opacity-30" data-alt="minimalist abstract 3d rendering of floating glowing geometric shapes representing data flow from an email envelope to a calendar icon against a deep navy background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCP4NiHeHtgdm60gyjOmHBq4NGZBZ2A78VjpAAYEgwGNT699xFda889wWeZLkRwlusueqJ9eu8C_wuX0BRFiQ1DFqYsCzj2Wdikw7LiPVo_v-xfTgciHqk8ciVRw13nfv8P06hu0ISDatqjwFG3OleOJi2F4bEIaTdbOnOufEwQPn63oRYbPXW2UEU3KZmw0Z1Vowkb2wWqq2dbbRvfCHwOWw3xDBupH_ra9gqk1oAAkXxeB2FX_VofrtkPmcz5ERzLChMigkw-"/>
-</div>
-</section>
-<!-- How It Works Section -->
-<section class="py-24 px-8 bg-surface-container-low" id="how-it-works">
-<div class="max-w-7xl mx-auto">
-<h2 class="text-[1.5rem] font-bold text-center text-on-surface mb-16 tracking-tight">So funktioniert's</h2>
-<div class="grid md:grid-cols-3 gap-8">
-<!-- Step 1 -->
-<div class="bg-surface-container-lowest p-8 rounded-xl shadow-[0_20px_40px_rgba(25,28,30,0.04)] ring-1 ring-outline-variant/15 relative">
-<div class="w-12 h-12 bg-primary-fixed text-on-primary-fixed rounded-full flex items-center justify-center mb-6">
-<span class="material-symbols-outlined font-medium">mail</span>
-</div>
-<h3 class="text-lg font-bold text-on-surface mb-3">1. E-Mail weiterleiten</h3>
-<p class="text-on-surface-variant text-sm leading-relaxed">
-                        Leite einfach jede Meeting-Bestätigung an <span class="font-medium text-on-tertiary-container">meetings@meetingbutler.de</span> weiter.
-                    </p>
-</div>
-<!-- Step 2 -->
-<div class="bg-surface-container-lowest p-8 rounded-xl shadow-[0_20px_40px_rgba(25,28,30,0.04)] ring-1 ring-outline-variant/15 relative">
-<div class="w-12 h-12 bg-primary-fixed text-on-primary-fixed rounded-full flex items-center justify-center mb-6">
-<span class="material-symbols-outlined font-medium">memory</span>
-</div>
-<h3 class="text-lg font-bold text-on-surface mb-3">2. KI liest die Details</h3>
-<p class="text-on-surface-variant text-sm leading-relaxed">
-                        Unser System erkennt automatisch Datum, Uhrzeit, Ort und wichtige Links in Sekunden.
-                    </p>
-</div>
-<!-- Step 3 -->
-<div class="bg-surface-container-lowest p-8 rounded-xl shadow-[0_20px_40px_rgba(25,28,30,0.04)] ring-1 ring-outline-variant/15 relative border-l-4 border-l-on-tertiary-container">
-<div class="w-12 h-12 bg-primary-fixed text-on-primary-fixed rounded-full flex items-center justify-center mb-6">
-<span class="material-symbols-outlined font-medium">event_available</span>
-</div>
-<h3 class="text-lg font-bold text-on-surface mb-3">3. Kalender-Einladung erhalten</h3>
-<p class="text-on-surface-variant text-sm leading-relaxed">
-                        Du erhältst umgehend eine fertige ICS-Datei direkt in dein Postfach zurück.
-                    </p>
-</div>
-</div>
-</div>
-</section>
-<!-- Features Section -->
-<section class="py-24 px-8 max-w-7xl mx-auto" id="features">
-<h2 class="text-[1.5rem] font-bold text-center text-on-surface mb-16 tracking-tight">Warum Meetingbutler?</h2>
-<div class="grid md:grid-cols-3 gap-6">
-<div class="bg-surface-container p-8 rounded-xl hover:bg-surface-container-high transition-colors">
-<span class="material-symbols-outlined text-on-tertiary-container text-3xl mb-4">sync</span>
-<h4 class="font-bold text-on-surface mb-2">Funktioniert mit jedem Kalender</h4>
-<p class="text-sm text-on-surface-variant">Egal ob Google Calendar, Outlook oder Apple. Die ICS-Datei ist universell kompatibel.</p>
-</div>
-<div class="bg-surface-container p-8 rounded-xl hover:bg-surface-container-high transition-colors">
-<span class="material-symbols-outlined text-on-tertiary-container text-3xl mb-4">person_off</span>
-<h4 class="font-bold text-on-surface mb-2">Kein Account nötig</h4>
-<p class="text-sm text-on-surface-variant">Starte sofort. Keine komplizierte Registrierung, keine Passwörter zu merken.</p>
-</div>
-<div class="bg-surface-container p-8 rounded-xl hover:bg-surface-container-high transition-colors">
-<span class="material-symbols-outlined text-on-tertiary-container text-3xl mb-4">shield_lock</span>
-<h4 class="font-bold text-on-surface mb-2">Deutsche Datenschutzstandards</h4>
-<p class="text-sm text-on-surface-variant">100% DSGVO-konform. Deine Daten werden sicher in Deutschland verarbeitet und nicht gespeichert.</p>
-</div>
-</div>
-</section>
-<!-- Final CTA Section -->
-<section class="py-24 px-8 bg-primary-container text-on-primary">
-<div class="max-w-3xl mx-auto text-center">
-<h2 class="text-[2rem] font-bold mb-8 tracking-tight">Bereit, Meeting-Chaos zu beenden?</h2>
-<p class="text-lg text-primary-fixed-dim">Leite deine nächste Meeting-Bestätigung einfach an meetings@meetingbutler.de weiter.</p>
-</div>
-</section>
-<!-- Footer -->
-<footer class="w-full py-8 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800">
-<div class="text-center text-sm font-['Inter'] text-slate-500 dark:text-slate-400">
-        © 2025 Meetingbutler · Impressum · Datenschutz
+<body>
+
+<!-- ── HERO ─────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="badge">
+      <span class="badge-dot"></span>
+      Kein Account nötig
     </div>
+    <h1>Aus E-Mails werden<br/><em>Kalendertermine</em> — automatisch.</h1>
+    <p class="hero-sub">
+      Leite Meeting-Bestätigungen einfach weiter. Meetingbutler erkennt die Details und schickt dir sofort eine Kalendereinladung zurück.
+    </p>
+    <a href="mailto:meetings@meetingbutler.de?subject=Test&body=Hallo%2C%20ich%20leite%20diese%20E-Mail%20zum%20Testen%20weiter." class="btn-primary">
+      Jetzt kostenlos testen <span class="btn-arrow">→</span>
+    </a>
+    <p class="hero-hint">Öffnet deinen E-Mail-Client · Einfach weiterleiten · Fertig.</p>
+
+    <div class="flow">
+      <div class="flow-card"><span class="icon">📧</span> Meeting-E-Mail</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-card"><span class="icon">🤖</span> KI liest Details</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-card"><span class="icon">📅</span> .ics zurück im Postfach</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── STEPS ─────────────────────────────────────── -->
+<section class="steps">
+  <p class="section-label">So einfach geht's</p>
+  <h2>Drei Schritte — das war's.</h2>
+  <div class="steps-grid">
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <h3>E-Mail weiterleiten</h3>
+      <p>Du bekommst eine Meeting-Bestätigung? Leite sie an <strong>meetings@meetingbutler.de</strong> weiter. Das dauert 3 Sekunden.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <h3>KI liest die Details</h3>
+      <p>Meetingbutler erkennt automatisch Datum, Uhrzeit, Ort, Teilnehmer und wichtige Links — in Sekunden.</p>
+    </div>
+    <div class="step-card highlight">
+      <div class="step-num">3</div>
+      <h3>Kalender-Einladung erhalten</h3>
+      <p>Du bekommst eine fertige <strong>.ics-Datei</strong> direkt in dein Postfach. Ein Klick — und der Termin ist im Kalender.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── FEATURES ──────────────────────────────────── -->
+<section class="features">
+  <p class="section-label">Warum Meetingbutler</p>
+  <h2>Einfach. Privat. Überall.</h2>
+  <div class="features-grid">
+    <div class="feat-card">
+      <div class="feat-icon">📆</div>
+      <h4>Funktioniert mit jedem Kalender</h4>
+      <p>Google Calendar, Outlook, Apple Calendar — die ICS-Datei ist universell kompatibel.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🚀</div>
+      <h4>Kein Account nötig</h4>
+      <p>Keine Registrierung, keine Passwörter. Einfach eine E-Mail weiterleiten und loslegen.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🔒</div>
+      <h4>Deutsche Datenschutzstandards</h4>
+      <p>Server in Deutschland. DSGVO-konform. Deine E-Mails werden nach der Verarbeitung sofort gelöscht.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ───────────────────────────────────────── -->
+<section class="cta">
+  <div class="cta-inner">
+    <h2>Bereit, Meeting-Chaos zu beenden?</h2>
+    <p class="cta-address">
+      Leite deine nächste Meeting-Bestätigung einfach an:
+      <strong>meetings@meetingbutler.de</strong>
+      Kein Account. Keine App. Nur eine E-Mail.
+    </p>
+    <br/>
+    <a href="mailto:meetings@meetingbutler.de?subject=Test&body=Hallo%2C%20ich%20leite%20diese%20E-Mail%20zum%20Testen%20weiter." class="btn-primary">
+      Jetzt testen <span class="btn-arrow">→</span>
+    </a>
+  </div>
+</section>
+
+<!-- ── FOOTER ────────────────────────────────────── -->
+<footer>
+  <div class="footer-inner">
+    <span>© 2026 Meetingbutler</span>
+    <div class="footer-links">
+      <a href="/impressum">Impressum</a>
+      <a href="/datenschutz">Datenschutz</a>
+    </div>
+  </div>
 </footer>
-</body></html>
+
+</body>
+</html>
