@@ -58,7 +58,9 @@ The user gets a reply with a `.ics` attachment and a link to view/edit the extra
 - **PDF export** — printable event summary with all details
 - **Contact card** — `.vcf` download for quick address book import
 - **Queue-based** — BullMQ ensures no email gets lost; Bull Board UI for monitoring
-- **Admin API** — raw email viewer, queue inspector, health endpoint
+- **Event editing** — edit extracted event description directly in the browser; receive an updated ICS by email
+- **Admin Dashboard** — password-protected dashboard at `/admin-dashboard.html` showing per-user event counts, token usage, and estimated API cost
+- **Admin API** — raw email viewer, queue inspector, health endpoint, stats
 
 ---
 
@@ -104,12 +106,18 @@ node scripts/test-pipeline-mock.js
 
 ## API Endpoints
 
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/api/admin/health` | Health check |
-| `GET` | `/api/events` | List all extracted events |
-| `GET` | `/api/admin/raw-emails` | Raw email store |
-| `GET` | `/api/admin/queues` | Bull Board queue monitor |
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/admin/health` | — | Health check |
+| `GET` | `/api/events` | — | List all extracted events |
+| `GET` | `/api/events/manage/:uid` | — | Get event by UID |
+| `PATCH` | `/api/events/manage/:uid` | — | Update event (triggers updated ICS email) |
+| `POST` | `/api/events/manage/:uid/cancel` | — | Cancel event |
+| `GET` | `/api/admin/stats` | `X-Admin-Password` header | Per-user event + token stats |
+| `GET` | `/api/admin/raw-emails` | API key | Raw email store |
+| `GET` | `/api/admin/queues` | API key | Queue info |
+
+**Admin Dashboard:** `/admin-dashboard.html` — password-protected UI for the stats endpoint.
 
 ---
 
@@ -126,6 +134,7 @@ node scripts/test-pipeline-mock.js
 | `DEFAULT_FROM_EMAIL` | Reply-from address (must be `admin@`) |
 | `DEFAULT_FROM_NAME` | Display name for outgoing mails |
 | `OPENAI_KEY` | OpenAI API key |
+| `ADMIN_DASHBOARD_PASSWORD` | Password for `/admin-dashboard.html` and `GET /api/admin/stats` |
 
 > **Note:** `DEFAULT_FROM_EMAIL` must be set to `admin@meetingbutler.de` — `meetings@` auth fails.
 
@@ -147,11 +156,20 @@ Migration runs automatically in a separate init container (required due to Prism
 
 ## Deploy (Hetzner VPS)
 
+Deployment runs automatically via **GitHub Actions** on every push to `main`:
+
+1. SSH into server → `git pull`
+2. Build new Docker image
+3. `docker compose up -d` → wait for healthy status
+4. Run integration tests inside container
+5. Auto-rollback if health check fails
+
 ```bash
+# Manual deploy (fallback)
 ./deploy.sh
 ```
 
-Pushes to GitHub → SSHes into `root@188.245.90.16` → pulls latest → rebuilds image → restarts services. Caddy handles TLS automatically.
+Caddy handles TLS automatically via Let's Encrypt.
 
 ```
 /opt/meetingbutler.de/
@@ -168,13 +186,21 @@ Pushes to GitHub → SSHes into `root@188.245.90.16` → pulls latest → rebuil
 src/
 ├── imap/         # IMAP polling (30s interval)
 ├── email/        # SMTP send service
-├── llm/          # OpenAI extraction + update parsing
-├── ics/          # Calendar file generation
-├── events/       # Event CRUD (Prisma)
+├── llm/          # OpenAI extraction + update parsing, token tracking
+├── ics/          # Calendar file generation (ICS + SEQUENCE updates)
+├── events/       # Event CRUD, manage endpoints, counter-proposals
 ├── queue/        # BullMQ job processing
 ├── pdf/          # PDF summary export
-├── admin/        # Health, queue UI, raw email API
+├── auth/         # User registration + email verification
+├── common/       # Prisma service, geo-block middleware
+├── admin/        # Health, stats dashboard API, raw email/queue endpoints
 └── config/       # Environment config
+
+public/
+├── index.html            # Landing page
+├── register.html         # User registration
+├── termin.html           # Event manage/edit page
+└── admin-dashboard.html  # Admin stats dashboard (password-protected)
 ```
 
 ---
