@@ -58,11 +58,16 @@ export class EmailSendService {
     smtpAdminUser: string,
     smtpAdminPass: string,
   ): Promise<void> {
+    const configuredPort = parseInt(this.config.get<string>('SMTP_PORT', '587'), 10);
+    const configuredSecure = this.config.get<string>('SMTP_SECURE', 'false') === 'true';
+    // Try configured port first, then fallback alternatives
+    const altPort = configuredPort === 587 ? 465 : 587;
+    const altSecure = altPort === 465;
     const candidates = [
-      { user: smtpUser, pass: smtpPass, port: 465, secure: true },
-      { user: smtpUser, pass: smtpPass, port: 587, secure: false },
-      { user: smtpAdminUser, pass: smtpAdminPass, port: 465, secure: true },
-      { user: smtpAdminUser, pass: smtpAdminPass, port: 587, secure: false },
+      { user: smtpUser, pass: smtpPass, port: configuredPort, secure: configuredSecure },
+      { user: smtpUser, pass: smtpPass, port: altPort, secure: altSecure },
+      { user: smtpAdminUser, pass: smtpAdminPass, port: configuredPort, secure: configuredSecure },
+      { user: smtpAdminUser, pass: smtpAdminPass, port: altPort, secure: altSecure },
     ].filter((c) => c.user && c.pass);
 
     for (const { user, pass, port, secure } of candidates) {
