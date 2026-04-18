@@ -17,7 +17,7 @@ ssh -o StrictHostKeyChecking=no "$SERVER" "
   echo '  -> Building Docker image...'
   docker build -t meetingbutler:latest .
   echo '  -> Starting services...'
-  docker compose up -d --remove-orphans
+  docker compose up -d --remove-orphans --force-recreate
   echo '  -> Waiting for app to be healthy...'
   sleep 5
   docker compose ps
