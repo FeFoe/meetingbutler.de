@@ -3,7 +3,6 @@ import { PrismaService } from '../common/prisma.service';
 import { AdminApiKeyGuard } from './admin-api-key.guard';
 
 @Controller('admin')
-@UseGuards(AdminApiKeyGuard)
 export class AdminController {
   constructor(private prisma: PrismaService) {}
 
@@ -17,6 +16,7 @@ export class AdminController {
     };
   }
 
+  @UseGuards(AdminApiKeyGuard)
   @Get('raw-emails')
   async rawEmails() {
     return this.prisma.rawEmail.findMany({
@@ -25,6 +25,7 @@ export class AdminController {
     });
   }
 
+  @UseGuards(AdminApiKeyGuard)
   @Get('queues')
   queues() {
     return {
