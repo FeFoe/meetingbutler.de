@@ -1,0 +1,3 @@
+meetingbutler.de, www.meetingbutler.de {
+	reverse_proxy app:3000
+}

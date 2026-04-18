@@ -1,8 +1,22 @@
 version: '3.9'
 
 services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: meetingbutler-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
   migrate:
-    image: meetingbutler:local
+    image: meetingbutler:latest
     container_name: meetingbutler-migrate
     restart: "no"
     entrypoint: ["/bin/sh", "-c"]
@@ -15,18 +29,15 @@ services:
         condition: service_healthy
 
   app:
-    build: .
+    image: meetingbutler:latest
     container_name: meetingbutler-app
     restart: unless-stopped
-    ports:
-      - "3000:3000"
     environment:
       NODE_ENV: production
       PORT: 3000
       DATABASE_URL: postgresql://meetingbutler:meetingbutler@postgres:5432/meetingbutler
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      # Mail credentials — loaded from .env file
       MAIL_HOST: ${MAIL_HOST}
       IMAP_HOST: ${IMAP_HOST}
       IMAP_PORT: ${IMAP_PORT}
@@ -56,12 +67,6 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/admin/health"]
-      interval: 30s
-      timeout: 10s
-      start_period: 30s
-      retries: 3
 
   postgres:
     image: postgres:16-alpine
@@ -78,8 +83,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    ports:
-      - "5433:5432"
 
   redis:
     image: redis:7-alpine
@@ -93,10 +96,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    ports:
-      - "6380:6379"
 
 volumes:
   pgdata:
   redisdata:
   uploads:
+  caddy_data:
+  caddy_config:
