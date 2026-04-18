@@ -1,4 +1,4 @@
-import { Controller, Get, Param, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Param, NotFoundException, ParseUUIDPipe } from '@nestjs/common';
 import { EventsService } from './events.service';
 
 @Controller('events')
@@ -11,7 +11,7 @@ export class EventsController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     const event = await this.eventsService.findOne(id);
     if (!event) throw new NotFoundException(`Event ${id} not found`);
     return event;

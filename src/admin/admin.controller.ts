@@ -1,7 +1,9 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { PrismaService } from '../common/prisma.service';
+import { AdminApiKeyGuard } from './admin-api-key.guard';
 
 @Controller('admin')
+@UseGuards(AdminApiKeyGuard)
 export class AdminController {
   constructor(private prisma: PrismaService) {}
 

@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
@@ -6,7 +6,7 @@ import { ImapFlow } from 'imapflow';
 import { QUEUE_EMAIL_INGEST } from '../queue/queue.module';
 
 @Injectable()
-export class ImapPollerService implements OnModuleInit {
+export class ImapPollerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(ImapPollerService.name);
   private pollInterval: NodeJS.Timeout;
   private isPolling = false;
@@ -19,7 +19,17 @@ export class ImapPollerService implements OnModuleInit {
   async onModuleInit() {
     this.logger.log('Starting IMAP poller (30s interval)');
     await this.poll();
-    this.pollInterval = setInterval(() => this.poll(), 30_000);
+    this.pollInterval = setInterval(() => {
+      this.poll().catch((err) =>
+        this.logger.error(`Uncaught error in IMAP poll interval: ${err.message}`, err.stack),
+      );
+    }, 30_000);
+  }
+
+  onModuleDestroy() {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+    }
   }
 
   private async poll() {
@@ -37,7 +47,7 @@ export class ImapPollerService implements OnModuleInit {
   private async fetchUnseen() {
     const client = new ImapFlow({
       host: this.config.get<string>('IMAP_HOST'),
-      port: parseInt(this.config.get<string>('IMAP_PORT', '993')),
+      port: parseInt(this.config.get<string>('IMAP_PORT', '993'), 10),
       secure: this.config.get<string>('IMAP_SECURE', 'true') === 'true',
       auth: {
         user: this.config.get<string>('IMAP_ADMIN_USER'),

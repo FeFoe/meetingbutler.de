@@ -23,7 +23,7 @@ import { AdminModule } from './admin/admin.module';
       useFactory: (config: ConfigService) => ({
         redis: {
           host: config.get('REDIS_HOST', 'localhost'),
-          port: parseInt(config.get('REDIS_PORT', '6379')),
+          port: parseInt(config.get('REDIS_PORT', '6379'), 10),
         },
         defaultJobOptions: {
           attempts: 3,

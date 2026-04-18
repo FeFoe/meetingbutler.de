@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import * as fs from 'fs';
@@ -32,7 +32,7 @@ export class EmailSendService {
 
     this.transporter = nodemailer.createTransport({
       host: this.config.get<string>('SMTP_HOST'),
-      port: parseInt(this.config.get<string>('SMTP_PORT', '465')),
+      port: parseInt(this.config.get<string>('SMTP_PORT', '465'), 10),
       secure: this.config.get<string>('SMTP_SECURE', 'true') === 'true',
       auth: {
         user: smtpUser || smtpAdminUser,
@@ -41,17 +41,34 @@ export class EmailSendService {
     });
 
     // Verify and fall back to admin if meetings fails
-    this.transporter.verify().then(() => {
+    this.initTransporter(smtpUser, smtpAdminUser, smtpAdminPass).catch((err) =>
+      this.logger.error(`SMTP initialization failed: ${err.message}`, err.stack),
+    );
+  }
+
+  private async initTransporter(
+    smtpUser: string,
+    smtpAdminUser: string,
+    smtpAdminPass: string,
+  ): Promise<void> {
+    try {
+      await this.transporter.verify();
       this.logger.log(`SMTP authenticated as ${smtpUser || smtpAdminUser}`);
-    }).catch(async () => {
+    } catch {
       this.logger.warn(`Meetings SMTP failed, falling back to admin account`);
       this.transporter = nodemailer.createTransport({
         host: this.config.get<string>('SMTP_HOST'),
-        port: parseInt(this.config.get<string>('SMTP_PORT', '465')),
+        port: parseInt(this.config.get<string>('SMTP_PORT', '465'), 10),
         secure: this.config.get<string>('SMTP_SECURE', 'true') === 'true',
         auth: { user: smtpAdminUser, pass: smtpAdminPass },
       });
-    });
+      try {
+        await this.transporter.verify();
+        this.logger.log(`SMTP fallback authenticated as ${smtpAdminUser}`);
+      } catch (fallbackErr) {
+        this.logger.error(`SMTP verification failed for both accounts: ${fallbackErr.message}`);
+      }
+    }
   }
 
   private formatDetailLine(label: string, value: string | null | undefined): string {
@@ -139,8 +156,14 @@ export class EmailSendService {
     return lines.join('\n');
   }
 
+  private static readonly EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   async sendEventEmail(options: SendEventEmailOptions): Promise<void> {
     const { to, isUpdate, event, icsContent, attachmentIds, eventDetails } = options;
+
+    if (!EmailSendService.EMAIL_REGEX.test(to)) {
+      throw new BadRequestException(`Invalid recipient email address: ${to}`);
+    }
 
     const label = isUpdate ? 'Event updated' : 'Event created';
     const subject = `📅 ${label}: ${event.title}`;

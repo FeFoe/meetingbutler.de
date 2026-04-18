@@ -110,9 +110,18 @@ export class ImapIngestProcessor {
   ): Promise<{ id: string; filename: string; path: string } | null> {
     try {
       const safeName = sanitize(att.filename || `attachment-${Date.now()}`);
+      if (!safeName || safeName === '.') {
+        this.logger.warn(`Rejected unsafe attachment filename: ${att.filename}`);
+        return null;
+      }
       const dir = path.join(UPLOADS_DIR, rawEmailId);
       fs.mkdirSync(dir, { recursive: true });
-      const filePath = path.join(dir, safeName);
+      const filePath = path.resolve(dir, safeName);
+      // Guard against path traversal
+      if (!filePath.startsWith(path.resolve(dir) + path.sep)) {
+        this.logger.warn(`Path traversal attempt detected for attachment: ${att.filename}`);
+        return null;
+      }
 
       fs.writeFileSync(filePath, att.content);
 
