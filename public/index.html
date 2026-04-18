@@ -7,24 +7,23 @@
   <meta name="description" content="Leite Meeting-Bestätigungen einfach weiter. Meetingbutler erkennt die Details und schickt dir sofort eine Kalendereinladung zurück."/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --navy:    #0b1120;
-      --navy2:   #111827;
-      --accent:  #3b7eff;
-      --accent2: #6fb3ff;
-      --sand:    #f5f3ef;
-      --muted:   #6b7280;
-      --border:  #e5e7eb;
-      --white:   #ffffff;
-      --radius:  12px;
+      --navy:   #0b1120;
+      --navy2:  #111827;
+      --accent: #3b7eff;
+      --accent2:#6fb3ff;
+      --sand:   #f4f2ee;
+      --muted:  #6b7280;
+      --border: #e5e7eb;
+      --white:  #ffffff;
+      --r:      12px;
     }
 
     html { scroll-behavior: smooth; }
-
     body {
       font-family: 'DM Sans', sans-serif;
       background: var(--white);
@@ -32,11 +31,34 @@
       -webkit-font-smoothing: antialiased;
     }
 
+    /* ── LOGO ────────────────────────────────────────── */
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      text-decoration: none;
+      position: absolute;
+      top: clamp(1.2rem, 4vw, 2rem);
+      left: clamp(1.2rem, 5vw, 2.5rem);
+      z-index: 10;
+    }
+    .logo-mark {
+      width: 34px; height: 34px;
+      flex-shrink: 0;
+    }
+    .logo-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      color: rgba(255,255,255,.9);
+      letter-spacing: -.01em;
+    }
+
     /* ── HERO ─────────────────────────────────────────── */
     .hero {
       background: var(--navy);
       color: var(--white);
-      padding: clamp(5rem, 15vw, 9rem) 1.5rem clamp(4rem, 10vw, 7rem);
+      padding: clamp(7rem, 18vw, 11rem) 1.5rem clamp(4rem, 10vw, 7rem);
       text-align: center;
       position: relative;
       overflow: hidden;
@@ -46,227 +68,207 @@
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(59,126,255,.35) 0%, transparent 70%),
-        radial-gradient(ellipse 40% 30% at 80% 90%, rgba(111,179,255,.12) 0%, transparent 60%);
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(59,126,255,.3) 0%, transparent 70%),
+        radial-gradient(ellipse 35% 25% at 85% 85%, rgba(111,179,255,.1) 0%, transparent 60%);
       pointer-events: none;
     }
-    .hero-inner { position: relative; max-width: 760px; margin: 0 auto; }
+    .hero-inner { position: relative; max-width: 720px; margin: 0 auto; }
 
     .badge {
       display: inline-flex;
       align-items: center;
       gap: .4rem;
       background: rgba(59,126,255,.15);
-      border: 1px solid rgba(59,126,255,.35);
+      border: 1px solid rgba(59,126,255,.3);
       color: var(--accent2);
-      font-size: .8rem;
+      font-size: .75rem;
       font-weight: 600;
-      letter-spacing: .06em;
+      letter-spacing: .07em;
       text-transform: uppercase;
-      padding: .35rem .85rem;
+      padding: .3rem .8rem;
       border-radius: 100px;
-      margin-bottom: 2rem;
+      margin-bottom: 1.8rem;
     }
     .badge-dot {
-      width: 6px; height: 6px;
+      width: 5px; height: 5px;
       background: var(--accent2);
       border-radius: 50%;
-      animation: pulse 2s ease-in-out infinite;
+      animation: blink 2s ease-in-out infinite;
     }
-    @keyframes pulse {
-      0%,100% { opacity: 1; }
-      50%      { opacity: .3; }
-    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
 
     h1 {
-      font-family: 'Fraunces', Georgia, serif;
-      font-size: clamp(2.2rem, 6vw, 4rem);
-      font-weight: 700;
-      line-height: 1.1;
-      letter-spacing: -.02em;
-      margin-bottom: 1.4rem;
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2rem, 5.5vw, 3.6rem);
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -.03em;
+      margin-bottom: 1.3rem;
       color: var(--white);
     }
-    h1 em {
-      font-style: italic;
-      color: var(--accent2);
-    }
+    h1 .hi { color: var(--accent2); }
 
     .hero-sub {
-      font-size: clamp(1rem, 2.5vw, 1.2rem);
-      color: rgba(255,255,255,.65);
-      max-width: 540px;
+      font-size: clamp(.95rem, 2.2vw, 1.15rem);
+      color: rgba(255,255,255,.6);
+      max-width: 500px;
       margin: 0 auto 2.5rem;
-      line-height: 1.65;
+      line-height: 1.7;
     }
 
-    .btn-primary {
+    .btn {
       display: inline-flex;
       align-items: center;
-      gap: .6rem;
+      gap: .55rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .95rem;
+      font-weight: 600;
+      padding: .85rem 1.8rem;
+      border-radius: var(--r);
+      text-decoration: none;
+      transition: transform .15s, box-shadow .2s, background .2s;
+      cursor: pointer;
+    }
+    .btn-primary {
       background: var(--accent);
       color: var(--white);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 1rem;
-      font-weight: 600;
-      padding: .9rem 2rem;
-      border-radius: var(--radius);
-      text-decoration: none;
-      transition: background .2s, transform .15s, box-shadow .2s;
-      box-shadow: 0 0 0 0 rgba(59,126,255,.5);
+      box-shadow: 0 0 0 0 rgba(59,126,255,.4);
     }
     .btn-primary:hover {
       background: #2a6eef;
       transform: translateY(-2px);
-      box-shadow: 0 8px 30px rgba(59,126,255,.4);
+      box-shadow: 0 8px 28px rgba(59,126,255,.45);
     }
-    .btn-arrow { font-size: 1.1rem; transition: transform .2s; }
+    .btn-arrow { transition: transform .2s; }
     .btn-primary:hover .btn-arrow { transform: translateX(3px); }
 
     .hero-hint {
-      margin-top: 1rem;
-      font-size: .82rem;
-      color: rgba(255,255,255,.4);
+      margin-top: .9rem;
+      font-size: .78rem;
+      color: rgba(255,255,255,.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .4rem;
     }
 
-    /* flow illustration */
+    /* flow pills */
     .flow {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: clamp(.5rem, 3vw, 1.5rem);
-      margin-top: clamp(3rem, 8vw, 5rem);
+      gap: clamp(.4rem, 2.5vw, 1.2rem);
+      margin-top: clamp(2.5rem, 7vw, 4.5rem);
       flex-wrap: wrap;
     }
-    .flow-card {
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: var(--radius);
-      padding: 1rem 1.4rem;
-      font-size: .85rem;
-      color: rgba(255,255,255,.7);
-      display: flex;
-      align-items: center;
-      gap: .6rem;
+    .pill {
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 100px;
+      padding: .55rem 1.1rem;
+      font-size: .82rem;
+      color: rgba(255,255,255,.65);
+      display: flex; align-items: center; gap: .45rem;
       white-space: nowrap;
     }
-    .flow-card .icon { font-size: 1.3rem; }
-    .flow-arrow { color: rgba(255,255,255,.25); font-size: 1.2rem; }
+    .flow-sep { color: rgba(255,255,255,.2); font-size: 1rem; }
 
     /* ── STEPS ───────────────────────────────────────── */
     .steps {
       background: var(--sand);
-      padding: clamp(4rem, 10vw, 7rem) 1.5rem;
+      padding: clamp(3.5rem, 9vw, 6rem) 1.5rem;
     }
-    .section-label {
+    .sec-label {
       text-align: center;
-      font-size: .78rem;
+      font-size: .72rem;
       font-weight: 600;
       letter-spacing: .1em;
       text-transform: uppercase;
       color: var(--accent);
-      margin-bottom: 1rem;
+      margin-bottom: .8rem;
     }
     h2 {
-      font-family: 'Fraunces', Georgia, serif;
-      font-size: clamp(1.7rem, 4vw, 2.4rem);
-      font-weight: 600;
-      letter-spacing: -.02em;
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+      font-weight: 700;
+      letter-spacing: -.025em;
       text-align: center;
       color: var(--navy);
-      margin-bottom: clamp(2.5rem, 6vw, 4rem);
-      line-height: 1.2;
+      margin-bottom: clamp(2rem, 5vw, 3.5rem);
+      line-height: 1.15;
     }
     .steps-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 1.5rem;
-      max-width: 900px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+      max-width: 860px;
       margin: 0 auto;
     }
-    .step-card {
+    .step {
       background: var(--white);
-      border-radius: var(--radius);
-      padding: 2rem;
+      border-radius: var(--r);
+      padding: 1.8rem;
       border: 1px solid var(--border);
-      position: relative;
     }
-    .step-num {
-      width: 2.2rem; height: 2.2rem;
+    .step.hi { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+    .step-n {
+      width: 2rem; height: 2rem;
       background: var(--navy);
       color: var(--white);
       border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-size: .8rem;
+      font-family: 'Syne', sans-serif;
+      font-size: .78rem;
       font-weight: 700;
-      margin-bottom: 1.2rem;
+      margin-bottom: 1.1rem;
     }
-    .step-card h3 {
-      font-family: 'Fraunces', Georgia, serif;
-      font-size: 1.15rem;
-      font-weight: 600;
+    .step.hi .step-n { background: var(--accent); }
+    .step h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
       color: var(--navy);
-      margin-bottom: .6rem;
-      line-height: 1.3;
+      margin-bottom: .5rem;
+      letter-spacing: -.01em;
     }
-    .step-card p {
-      font-size: .9rem;
-      color: var(--muted);
-      line-height: 1.6;
-    }
-    .step-card p strong {
-      color: var(--accent);
-      font-weight: 600;
-    }
-    .step-card.highlight {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 1px var(--accent), 0 8px 30px rgba(59,126,255,.08);
-    }
+    .step p { font-size: .875rem; color: var(--muted); line-height: 1.65; }
+    .step p strong { color: var(--accent); font-weight: 600; }
 
     /* ── FEATURES ────────────────────────────────────── */
     .features {
-      padding: clamp(4rem, 10vw, 7rem) 1.5rem;
-      max-width: 900px;
+      padding: clamp(3.5rem, 9vw, 6rem) 1.5rem;
+      max-width: 860px;
       margin: 0 auto;
     }
-    .features-grid {
+    .feat-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 1.25rem;
     }
-    .feat-card {
-      padding: 1.8rem;
-      border-radius: var(--radius);
+    .feat {
+      padding: 1.6rem;
+      border-radius: var(--r);
       background: var(--sand);
       border: 1px solid transparent;
       transition: border-color .2s, box-shadow .2s;
     }
-    .feat-card:hover {
-      border-color: var(--border);
-      box-shadow: 0 4px 20px rgba(0,0,0,.06);
-    }
-    .feat-icon {
-      font-size: 1.6rem;
-      margin-bottom: 1rem;
-    }
-    .feat-card h4 {
-      font-family: 'Fraunces', Georgia, serif;
-      font-size: 1rem;
-      font-weight: 600;
+    .feat:hover { border-color: var(--border); box-shadow: 0 4px 18px rgba(0,0,0,.05); }
+    .feat-ic { font-size: 1.5rem; margin-bottom: .9rem; }
+    .feat h4 {
+      font-family: 'Syne', sans-serif;
+      font-size: .95rem;
+      font-weight: 700;
       color: var(--navy);
-      margin-bottom: .5rem;
+      margin-bottom: .45rem;
+      letter-spacing: -.01em;
     }
-    .feat-card p {
-      font-size: .875rem;
-      color: var(--muted);
-      line-height: 1.6;
-    }
+    .feat p { font-size: .85rem; color: var(--muted); line-height: 1.6; }
 
     /* ── CTA ─────────────────────────────────────────── */
     .cta {
       background: var(--navy2);
       color: var(--white);
-      padding: clamp(4rem, 10vw, 7rem) 1.5rem;
+      padding: clamp(3.5rem, 9vw, 6rem) 1.5rem;
       text-align: center;
       position: relative;
       overflow: hidden;
@@ -275,120 +277,136 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: radial-gradient(ellipse 60% 60% at 50% 100%, rgba(59,126,255,.2) 0%, transparent 70%);
+      background: radial-gradient(ellipse 55% 55% at 50% 110%, rgba(59,126,255,.22) 0%, transparent 70%);
       pointer-events: none;
     }
-    .cta-inner { position: relative; max-width: 560px; margin: 0 auto; }
+    .cta-inner { position: relative; max-width: 520px; margin: 0 auto; }
     .cta h2 { color: var(--white); }
-    .cta-address {
-      margin-top: 1.5rem;
-      font-size: .9rem;
+    .cta-sub {
+      font-size: .95rem;
       color: rgba(255,255,255,.5);
+      margin-bottom: 2rem;
+      line-height: 1.65;
     }
-    .cta-address strong {
+    .cta-sub strong {
       color: var(--accent2);
-      font-family: 'DM Sans', monospace;
-      font-size: 1rem;
+      font-weight: 500;
       display: block;
-      margin-bottom: .25rem;
+      font-size: 1rem;
+      margin-top: .3rem;
     }
 
     /* ── FOOTER ──────────────────────────────────────── */
     footer {
       background: var(--navy);
-      border-top: 1px solid rgba(255,255,255,.08);
-      padding: 1.8rem 1.5rem;
+      border-top: 1px solid rgba(255,255,255,.07);
+      padding: 1.6rem 1.5rem;
     }
-    .footer-inner {
-      max-width: 900px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 1rem;
+    .foot-inner {
+      max-width: 860px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: .75rem;
     }
-    footer span { font-size: .85rem; color: rgba(255,255,255,.35); }
-    .footer-links { display: flex; gap: 1.5rem; }
-    .footer-links a {
-      font-size: .85rem;
-      color: rgba(255,255,255,.45);
+    footer span { font-size: .82rem; color: rgba(255,255,255,.3); }
+    .foot-links { display: flex; gap: 1.4rem; }
+    .foot-links a {
+      font-size: .82rem;
+      color: rgba(255,255,255,.4);
       text-decoration: none;
       transition: color .15s;
     }
-    .footer-links a:hover { color: rgba(255,255,255,.85); }
+    .foot-links a:hover { color: rgba(255,255,255,.8); }
   </style>
 </head>
 <body>
 
 <!-- ── HERO ─────────────────────────────────────── -->
 <section class="hero">
+
+  <!-- Logo top-left -->
+  <a href="/" class="logo" aria-label="Meetingbutler">
+    <svg class="logo-mark" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="34" height="34" rx="8" fill="#3b7eff"/>
+      <!-- Envelope shape -->
+      <rect x="6" y="11" width="22" height="15" rx="2" fill="white" fill-opacity=".15" stroke="white" stroke-width="1.5"/>
+      <polyline points="6,13 17,21 28,13" stroke="white" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+      <!-- Calendar corner tab -->
+      <rect x="20" y="6" width="10" height="10" rx="2" fill="#0b1120"/>
+      <rect x="21" y="7" width="8" height="8" rx="1.5" fill="#3b7eff" stroke="white" stroke-width="1"/>
+      <line x1="23" y1="7" x2="23" y2="6" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="27" y1="7" x2="27" y2="6" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="22" y1="11" x2="28" y2="11" stroke="white" stroke-width=".8" stroke-opacity=".6"/>
+      <rect x="23" y="12" width="1.5" height="1.5" rx=".3" fill="white" fill-opacity=".8"/>
+      <rect x="26" y="12" width="1.5" height="1.5" rx=".3" fill="white" fill-opacity=".8"/>
+    </svg>
+    <span class="logo-name">Meetingbutler</span>
+  </a>
+
   <div class="hero-inner">
-    <div class="badge">
-      <span class="badge-dot"></span>
-      Kein Account nötig
-    </div>
-    <h1>Aus E-Mails werden<br/><em>Kalendertermine</em> — automatisch.</h1>
-    <p class="hero-sub">
-      Leite Meeting-Bestätigungen einfach weiter. Meetingbutler erkennt die Details und schickt dir sofort eine Kalendereinladung zurück.
-    </p>
-    <a href="mailto:meetings@meetingbutler.de?subject=Test&body=Hallo%2C%20ich%20leite%20diese%20E-Mail%20zum%20Testen%20weiter." class="btn-primary">
-      Jetzt kostenlos testen <span class="btn-arrow">→</span>
+    <div class="badge"><span class="badge-dot"></span>Kein Account nötig</div>
+    <h1>Aus E-Mails werden<br/><span class="hi">Kalendertermine</span> —<br/>automatisch.</h1>
+    <p class="hero-sub">Leite Meeting-Bestätigungen einfach weiter. Meetingbutler erkennt die Details und schickt dir sofort eine Kalendereinladung zurück.</p>
+
+    <a href="/contact.vcf" download="Meetingbutler.vcf" class="btn btn-primary">
+      Kontakt speichern <span class="btn-arrow">→</span>
     </a>
-    <p class="hero-hint">Öffnet deinen E-Mail-Client · Einfach weiterleiten · Fertig.</p>
+    <p class="hero-hint">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5.5" stroke="currentColor" stroke-opacity=".5"/><path d="M6 4v2.5l1.5 1" stroke="currentColor" stroke-opacity=".5" stroke-linecap="round"/></svg>
+      Kontakt speichern · E-Mail weiterleiten · Kalender-Einladung erhalten
+    </p>
 
     <div class="flow">
-      <div class="flow-card"><span class="icon">📧</span> Meeting-E-Mail</div>
-      <span class="flow-arrow">→</span>
-      <div class="flow-card"><span class="icon">🤖</span> KI liest Details</div>
-      <span class="flow-arrow">→</span>
-      <div class="flow-card"><span class="icon">📅</span> .ics zurück im Postfach</div>
+      <div class="pill">📧 Meeting-E-Mail</div>
+      <span class="flow-sep">→</span>
+      <div class="pill">🤖 KI liest Details</div>
+      <span class="flow-sep">→</span>
+      <div class="pill">📅 .ics zurück</div>
     </div>
   </div>
 </section>
 
 <!-- ── STEPS ─────────────────────────────────────── -->
 <section class="steps">
-  <p class="section-label">So einfach geht's</p>
+  <p class="sec-label">So einfach geht's</p>
   <h2>Drei Schritte — das war's.</h2>
   <div class="steps-grid">
-    <div class="step-card">
-      <div class="step-num">1</div>
+    <div class="step">
+      <div class="step-n">1</div>
+      <h3>Kontakt speichern</h3>
+      <p>Lade die Kontaktdatei herunter und speichere <strong>meetings@meetingbutler.de</strong> in deinen Kontakten.</p>
+    </div>
+    <div class="step">
+      <div class="step-n">2</div>
       <h3>E-Mail weiterleiten</h3>
-      <p>Du bekommst eine Meeting-Bestätigung? Leite sie an <strong>meetings@meetingbutler.de</strong> weiter. Das dauert 3 Sekunden.</p>
+      <p>Bekommst du eine Meeting-Bestätigung? Einfach an Meetingbutler weiterleiten — dauert 3 Sekunden.</p>
     </div>
-    <div class="step-card">
-      <div class="step-num">2</div>
-      <h3>KI liest die Details</h3>
-      <p>Meetingbutler erkennt automatisch Datum, Uhrzeit, Ort, Teilnehmer und wichtige Links — in Sekunden.</p>
-    </div>
-    <div class="step-card highlight">
-      <div class="step-num">3</div>
+    <div class="step hi">
+      <div class="step-n">3</div>
       <h3>Kalender-Einladung erhalten</h3>
-      <p>Du bekommst eine fertige <strong>.ics-Datei</strong> direkt in dein Postfach. Ein Klick — und der Termin ist im Kalender.</p>
+      <p>Du bekommst eine fertige <strong>.ics-Datei</strong> zurück. Ein Klick — und der Termin ist im Kalender.</p>
     </div>
   </div>
 </section>
 
 <!-- ── FEATURES ──────────────────────────────────── -->
 <section class="features">
-  <p class="section-label">Warum Meetingbutler</p>
+  <p class="sec-label">Warum Meetingbutler</p>
   <h2>Einfach. Privat. Überall.</h2>
-  <div class="features-grid">
-    <div class="feat-card">
-      <div class="feat-icon">📆</div>
-      <h4>Funktioniert mit jedem Kalender</h4>
-      <p>Google Calendar, Outlook, Apple Calendar — die ICS-Datei ist universell kompatibel.</p>
+  <div class="feat-grid">
+    <div class="feat">
+      <div class="feat-ic">📆</div>
+      <h4>Jeder Kalender</h4>
+      <p>Google, Outlook, Apple — die ICS-Datei funktioniert überall.</p>
     </div>
-    <div class="feat-card">
-      <div class="feat-icon">🚀</div>
-      <h4>Kein Account nötig</h4>
-      <p>Keine Registrierung, keine Passwörter. Einfach eine E-Mail weiterleiten und loslegen.</p>
+    <div class="feat">
+      <div class="feat-ic">🚀</div>
+      <h4>Kein Account</h4>
+      <p>Keine Registrierung, keine Passwörter. Einfach weiterleiten.</p>
     </div>
-    <div class="feat-card">
-      <div class="feat-icon">🔒</div>
-      <h4>Deutsche Datenschutzstandards</h4>
-      <p>Server in Deutschland. DSGVO-konform. Deine E-Mails werden nach der Verarbeitung sofort gelöscht.</p>
+    <div class="feat">
+      <div class="feat-ic">🔒</div>
+      <h4>DSGVO-konform</h4>
+      <p>Server in Deutschland. E-Mails werden nach der Verarbeitung sofort gelöscht.</p>
     </div>
   </div>
 </section>
@@ -397,23 +415,21 @@
 <section class="cta">
   <div class="cta-inner">
     <h2>Bereit, Meeting-Chaos zu beenden?</h2>
-    <p class="cta-address">
-      Leite deine nächste Meeting-Bestätigung einfach an:
+    <p class="cta-sub">
+      Speichere den Kontakt und leite deine nächste Meeting-Bestätigung weiter an:
       <strong>meetings@meetingbutler.de</strong>
-      Kein Account. Keine App. Nur eine E-Mail.
     </p>
-    <br/>
-    <a href="mailto:meetings@meetingbutler.de?subject=Test&body=Hallo%2C%20ich%20leite%20diese%20E-Mail%20zum%20Testen%20weiter." class="btn-primary">
-      Jetzt testen <span class="btn-arrow">→</span>
+    <a href="/contact.vcf" download="Meetingbutler.vcf" class="btn btn-primary">
+      Kontaktdatei herunterladen <span class="btn-arrow">→</span>
     </a>
   </div>
 </section>
 
 <!-- ── FOOTER ────────────────────────────────────── -->
 <footer>
-  <div class="footer-inner">
-    <span>© 2026 Meetingbutler</span>
-    <div class="footer-links">
+  <div class="foot-inner">
+    <span>© 2025 Meetingbutler</span>
+    <div class="foot-links">
       <a href="/impressum">Impressum</a>
       <a href="/datenschutz">Datenschutz</a>
     </div>

@@ -1,0 +1,8 @@
+BEGIN:VCARD
+VERSION:3.0
+FN:Meetingbutler
+ORG:Meetingbutler
+EMAIL;TYPE=WORK:meetings@meetingbutler.de
+URL:https://meetingbutler.de
+NOTE:Leite Meeting-Bestätigungen an diese Adresse weiter – du bekommst sofort eine .ics Kalendereinladung zurück.
+END:VCARD
