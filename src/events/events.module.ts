@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { EventMatchProcessor } from './event-match.processor';
 import { EventsController } from './events.controller';
+import { ManageController } from './manage.controller';
 import { EventsService } from './events.service';
 import { LlmModule } from '../llm/llm.module';
 import { IcsModule } from '../ics/ics.module';
@@ -28,7 +29,7 @@ import {
     PdfModule,
   ],
   providers: [EventMatchProcessor, EventsService],
-  controllers: [EventsController],
+  controllers: [EventsController, ManageController],
   exports: [EventsService],
 })
 export class EventsModule {}

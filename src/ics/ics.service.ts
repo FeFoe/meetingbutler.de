@@ -8,7 +8,7 @@ export class IcsService {
 
   constructor(private config: ConfigService) {}
 
-  generate(event: any, participants: string[], details?: any): string {
+  generate(event: any, participants: string[], details?: any, method: 'REQUEST' | 'CANCEL' = 'REQUEST'): string {
     const organizerEmail = this.config.get('DEFAULT_FROM_EMAIL', 'meetings@meetingbutler.de');
     const now = DateTime.utc();
     const dtstamp = this.formatUtcDate(now);
@@ -22,7 +22,7 @@ export class IcsService {
       'VERSION:2.0',
       'PRODID:-//Meetingbutler//Meetingbutler.de//EN',
       'CALSCALE:GREGORIAN',
-      'METHOD:REQUEST',
+      `METHOD:${method}`,
     ];
 
     // VTIMEZONE block
@@ -57,7 +57,7 @@ export class IcsService {
       }
     }
 
-    lines.push('STATUS:CONFIRMED');
+    lines.push(`STATUS:${method === 'CANCEL' ? 'CANCELLED' : 'CONFIRMED'}`);
     lines.push('TRANSP:OPAQUE');
     lines.push('END:VEVENT');
     lines.push('END:VCALENDAR');

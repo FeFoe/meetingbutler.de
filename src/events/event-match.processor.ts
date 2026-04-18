@@ -227,6 +227,7 @@ export class EventMatchProcessor {
       attachmentIds: relevantAttachmentIds,
       eventDetails: storedDetails,
       pdfBuffer,
+      threadId: event.threadId ?? undefined,
     });
 
     this.logger.log(`Sent new event email to ${fromAddress}`);
@@ -339,6 +340,7 @@ export class EventMatchProcessor {
       attachmentIds: relevantAttachmentIds,
       eventDetails: updatedDetails,
       pdfBuffer,
+      threadId: existingEvent.threadId ?? undefined,
     });
 
     this.logger.log(`Sent update email to ${fromAddress}`);

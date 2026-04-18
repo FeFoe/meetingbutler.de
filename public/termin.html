@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Termin verwalten – Meetingbutler</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:   #0b1120;
+      --accent: #3b7eff;
+      --sand:   #f4f2ee;
+      --muted:  #6b7280;
+      --border: #e5e7eb;
+      --red:    #ef4444;
+      --green:  #22c55e;
+      --r:      10px;
+    }
+    body { font-family: 'Outfit', sans-serif; background: #f9fafb; color: var(--navy); -webkit-font-smoothing: antialiased; min-height: 100vh; }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--navy);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: .7rem;
+    }
+    .logo-mark { width: 28px; height: 28px; }
+    .logo-name { font-weight: 700; font-size: .95rem; color: rgba(255,255,255,.9); text-decoration: none; }
+
+    /* ── MAIN ── */
+    .page { max-width: 680px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+    /* status banner */
+    .status-banner {
+      display: flex; align-items: center; gap: .6rem;
+      padding: .75rem 1rem;
+      border-radius: var(--r);
+      font-size: .9rem;
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+    }
+    .status-banner.active   { background: #dcfce7; color: #15803d; }
+    .status-banner.cancelled { background: #fee2e2; color: #b91c1c; }
+    .status-banner.loading  { background: #f3f4f6; color: var(--muted); }
+
+    /* ── CARD ── */
+    .card { background: #fff; border: 1px solid var(--border); border-radius: 14px; margin-bottom: 1.25rem; overflow: hidden; }
+    .card-header { padding: 1rem 1.25rem .75rem; border-bottom: 1px solid var(--border); }
+    .card-header h2 { font-size: .75rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    .card-body { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: .75rem; }
+
+    /* ── FIELD ── */
+    .field label { display: block; font-size: .78rem; font-weight: 600; color: var(--muted); margin-bottom: .3rem; text-transform: uppercase; letter-spacing: .05em; }
+    .field input, .field textarea, .field select {
+      width: 100%;
+      padding: .6rem .8rem;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      font-family: 'Outfit', sans-serif;
+      font-size: .95rem;
+      color: var(--navy);
+      background: #fff;
+      transition: border-color .15s, box-shadow .15s;
+      outline: none;
+    }
+    .field input:focus, .field textarea:focus, .field select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59,126,255,.12);
+    }
+    .field textarea { resize: vertical; min-height: 80px; }
+    .field.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+    @media (max-width: 500px) { .field.row-2 { grid-template-columns: 1fr; } }
+
+    /* ── DETAILS TOGGLE ── */
+    .details-toggle {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .85rem; font-weight: 600; color: var(--accent);
+      cursor: pointer; user-select: none;
+      padding: .5rem 0;
+    }
+    .details-toggle .arrow { transition: transform .2s; }
+    .details-toggle.open .arrow { transform: rotate(90deg); }
+    .details-extra { display: none; }
+    .details-extra.open { display: flex; flex-direction: column; gap: .75rem; margin-top: .5rem; }
+
+    /* ── ACTIONS ── */
+    .actions { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: 1.75rem; }
+    .btn {
+      display: inline-flex; align-items: center; gap: .45rem;
+      font-family: 'Outfit', sans-serif; font-size: .95rem; font-weight: 600;
+      padding: .75rem 1.5rem; border-radius: var(--r);
+      border: none; cursor: pointer;
+      transition: background .15s, transform .12s, box-shadow .15s;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn-save { background: var(--accent); color: #fff; }
+    .btn-save:hover { background: #2a6eef; box-shadow: 0 6px 20px rgba(59,126,255,.35); }
+    .btn-save:disabled { background: #93c5fd; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-cancel { background: #fee2e2; color: var(--red); }
+    .btn-cancel:hover { background: #fecaca; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(100px);
+      background: var(--navy); color: #fff;
+      padding: .7rem 1.4rem; border-radius: 100px;
+      font-size: .9rem; font-weight: 500;
+      opacity: 0; transition: transform .3s, opacity .3s;
+      z-index: 999; white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .toast.error { background: var(--red); }
+
+    /* ── SKELETON ── */
+    .skeleton { background: linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%); background-size: 200%; animation: shimmer 1.2s infinite; border-radius: 6px; height: 1.2rem; }
+    @keyframes shimmer { 0%{background-position:200%} 100%{background-position:-200%} }
+
+    /* cancelled overlay */
+    .cancelled-overlay { opacity: .5; pointer-events: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="/" aria-label="Meetingbutler">
+    <svg class="logo-mark" viewBox="0 0 34 34" fill="none">
+      <rect width="34" height="34" rx="8" fill="#3b7eff"/>
+      <rect x="6" y="11" width="22" height="15" rx="2" fill="white" fill-opacity=".15" stroke="white" stroke-width="1.5"/>
+      <polyline points="6,13 17,21 28,13" stroke="white" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+      <rect x="20" y="6" width="10" height="10" rx="2" fill="#0b1120"/>
+      <rect x="21" y="7" width="8" height="8" rx="1.5" fill="#3b7eff" stroke="white" stroke-width="1"/>
+      <line x1="23" y1="7" x2="23" y2="6" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="27" y1="7" x2="27" y2="6" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="22" y1="11" x2="28" y2="11" stroke="white" stroke-width=".8" stroke-opacity=".6"/>
+      <rect x="23" y="12" width="1.5" height="1.5" rx=".3" fill="white" fill-opacity=".8"/>
+      <rect x="26" y="12" width="1.5" height="1.5" rx=".3" fill="white" fill-opacity=".8"/>
+    </svg>
+  </a>
+  <a href="/" class="logo-name">Meetingbutler</a>
+</header>
+
+<div class="page">
+
+  <div id="status-banner" class="status-banner loading">⏳ Lade Termin…</div>
+
+  <!-- Main fields -->
+  <div id="main-card" class="card">
+    <div class="card-header"><h2>Termindetails</h2></div>
+    <div class="card-body" id="main-fields">
+      <div class="skeleton" style="height:2rem;width:60%"></div>
+      <div class="skeleton" style="height:1rem;width:40%"></div>
+    </div>
+  </div>
+
+  <!-- Extra details -->
+  <div id="extra-card" class="card" style="display:none">
+    <div class="card-header"><h2>Weitere Details</h2></div>
+    <div class="card-body" id="extra-fields"></div>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions" id="actions" style="display:none">
+    <button class="btn btn-save" id="btn-save" onclick="saveChanges()">💾 Speichern &amp; ICS senden</button>
+    <button class="btn btn-cancel" id="btn-cancel-event" onclick="confirmCancel()">❌ Termin absagen</button>
+  </div>
+
+  <p style="margin-top:1rem;font-size:.8rem;color:var(--muted)">
+    💬 Änderungen per E-Mail: Antworte einfach auf die Meeting-E-Mail von Meetingbutler.
+  </p>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const uid = window.location.pathname.split('/').filter(Boolean).pop();
+  let eventData = null;
+  let isCancelled = false;
+
+  // ── Load event ─────────────────────────────────────
+  async function loadEvent() {
+    try {
+      const res = await fetch(`/api/events/manage/${uid}`);
+      if (!res.ok) throw new Error('Termin nicht gefunden');
+      eventData = await res.json();
+      renderEvent();
+    } catch (e) {
+      document.getElementById('status-banner').className = 'status-banner cancelled';
+      document.getElementById('status-banner').textContent = '❌ ' + e.message;
+    }
+  }
+
+  function toLocalDatetimeValue(isoStr) {
+    if (!isoStr) return '';
+    const d = new Date(isoStr);
+    // Format: YYYY-MM-DDTHH:MM (for datetime-local input)
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  function renderEvent() {
+    const e = eventData;
+    isCancelled = e.status === 'cancelled';
+
+    // Status banner
+    const banner = document.getElementById('status-banner');
+    if (isCancelled) {
+      banner.className = 'status-banner cancelled';
+      banner.textContent = '❌ Dieser Termin wurde abgesagt';
+    } else {
+      banner.className = 'status-banner active';
+      banner.textContent = '✓ Termin aktiv';
+    }
+
+    const d = e.details || {};
+
+    // Main fields
+    document.getElementById('main-fields').innerHTML = `
+      <div class="field">
+        <label>Titel</label>
+        <input id="f-title" type="text" value="${esc(e.title)}" ${isCancelled ? 'disabled' : ''}/>
+      </div>
+      <div class="field row-2">
+        <div>
+          <label>Beginn</label>
+          <input id="f-start" type="datetime-local" value="${toLocalDatetimeValue(e.startDatetime)}" ${isCancelled ? 'disabled' : ''}/>
+        </div>
+        <div>
+          <label>Ende</label>
+          <input id="f-end" type="datetime-local" value="${toLocalDatetimeValue(e.endDatetime)}" ${isCancelled ? 'disabled' : ''}/>
+        </div>
+      </div>
+      <div class="field">
+        <label>Zeitzone</label>
+        <select id="f-tz" ${isCancelled ? 'disabled' : ''}>
+          ${timezones().map(tz => `<option value="${tz}" ${e.timezone === tz ? 'selected' : ''}>${tz}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <label>Ort</label>
+        <input id="f-location" type="text" value="${esc(e.location || '')}" placeholder="Kein Ort" ${isCancelled ? 'disabled' : ''}/>
+      </div>
+      <div class="field">
+        <label>Beschreibung</label>
+        <textarea id="f-description" rows="3" ${isCancelled ? 'disabled' : ''}>${esc(e.description || '')}</textarea>
+      </div>
+    `;
+
+    // Extra detail fields
+    const extraCard = document.getElementById('extra-card');
+    const extraFields = document.getElementById('extra-fields');
+    extraCard.style.display = 'block';
+
+    const extras = [
+      ['f-bookingCode',  'Buchungscode',          d.bookingCode],
+      ['f-price',        'Preis',                 d.price],
+      ['f-checkIn',      'Check-in',              d.checkIn],
+      ['f-checkOut',     'Check-out',             d.checkOut],
+      ['f-flightNumber', 'Flugnummer / Zug',      d.flightNumber],
+      ['f-seat',         'Sitz',                  d.seat],
+      ['f-gate',         'Gate / Gleis',          d.gate],
+      ['f-accessCodes',  'Zugangscodes',          d.accessCodes],
+      ['f-cancellationPolicy','Stornierung',      d.cancellationPolicy],
+      ['f-address',      'Adresse',               d.address],
+      ['f-contact',      'Kontakt',               d.contact],
+      ['f-parking',      'Parkplatz',             d.parking],
+      ['f-dietary',      'Verpflegung',           d.dietary],
+      ['f-agenda',       'Agenda',                d.agenda],
+      ['f-notes',        'Notizen',               d.notes],
+      ['f-extra',        'Sonstiges',             d.extra],
+    ];
+
+    const toggleHtml = `
+      <div class="details-toggle" id="details-toggle" onclick="toggleDetails()">
+        <span class="arrow">▶</span> Weitere Details anzeigen
+      </div>
+      <div class="details-extra" id="details-extra">
+        ${extras.map(([id, label, val]) => `
+          <div class="field">
+            <label>${label}</label>
+            <input id="${id}" type="text" value="${esc(val || '')}" placeholder="—" ${isCancelled ? 'disabled' : ''}/>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    extraFields.innerHTML = toggleHtml;
+
+    // Actions
+    const actionsEl = document.getElementById('actions');
+    actionsEl.style.display = 'flex';
+    if (isCancelled) {
+      actionsEl.innerHTML = '<p style="color:var(--muted);font-size:.9rem">Dieser Termin wurde abgesagt und kann nicht mehr bearbeitet werden.</p>';
+    }
+  }
+
+  function toggleDetails() {
+    const toggle = document.getElementById('details-toggle');
+    const extra = document.getElementById('details-extra');
+    toggle.classList.toggle('open');
+    extra.classList.toggle('open');
+  }
+
+  // ── Save ───────────────────────────────────────────
+  async function saveChanges() {
+    const btn = document.getElementById('btn-save');
+    btn.disabled = true;
+    btn.textContent = '⏳ Speichern…';
+
+    function toIso(localVal) {
+      if (!localVal) return undefined;
+      // datetime-local gives YYYY-MM-DDTHH:MM, convert to ISO with seconds
+      return new Date(localVal).toISOString();
+    }
+
+    const payload = {
+      title:              val('f-title'),
+      startDatetime:      toIso(val('f-start')),
+      endDatetime:        toIso(val('f-end')),
+      timezone:           val('f-tz'),
+      location:           val('f-location') || null,
+      description:        val('f-description') || null,
+      bookingCode:        val('f-bookingCode') || null,
+      price:              val('f-price') || null,
+      checkIn:            val('f-checkIn') || null,
+      checkOut:           val('f-checkOut') || null,
+      flightNumber:       val('f-flightNumber') || null,
+      seat:               val('f-seat') || null,
+      gate:               val('f-gate') || null,
+      accessCodes:        val('f-accessCodes') || null,
+      cancellationPolicy: val('f-cancellationPolicy') || null,
+      address:            val('f-address') || null,
+      contact:            val('f-contact') || null,
+      parking:            val('f-parking') || null,
+      dietary:            val('f-dietary') || null,
+      agenda:             val('f-agenda') || null,
+      notes:              val('f-notes') || null,
+      extra:              val('f-extra') || null,
+    };
+
+    try {
+      const res = await fetch(`/api/events/manage/${uid}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('Fehler beim Speichern');
+      showToast('✓ Gespeichert! Aktualisierte ICS wurde per E-Mail gesendet.');
+    } catch (e) {
+      showToast('❌ ' + e.message, true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '💾 Speichern & ICS senden';
+    }
+  }
+
+  // ── Cancel ─────────────────────────────────────────
+  function confirmCancel() {
+    const confirmed = window.confirm(
+      'Termin wirklich absagen?\n\nDu erhältst eine Absage-ICS per E-Mail, die deinen Kalender aktualisiert.'
+    );
+    if (!confirmed) return;
+    doCancel();
+  }
+
+  async function doCancel() {
+    const btn = document.getElementById('btn-cancel-event');
+    btn.disabled = true;
+    btn.textContent = '⏳ Absagen…';
+
+    try {
+      const res = await fetch(`/api/events/manage/${uid}/cancel`, { method: 'POST' });
+      if (!res.ok) throw new Error('Fehler beim Absagen');
+      showToast('Termin abgesagt. Absage-ICS wurde per E-Mail gesendet.');
+      setTimeout(() => location.reload(), 2000);
+    } catch (e) {
+      showToast('❌ ' + e.message, true);
+      btn.disabled = false;
+      btn.textContent = '❌ Termin absagen';
+    }
+  }
+
+  // ── Helpers ────────────────────────────────────────
+  function val(id) {
+    const el = document.getElementById(id);
+    return el ? el.value : undefined;
+  }
+
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  let toastTimer;
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (isError ? ' error' : '');
+    clearTimeout(toastTimer);
+    requestAnimationFrame(() => { t.classList.add('show'); });
+    toastTimer = setTimeout(() => t.classList.remove('show'), 4000);
+  }
+
+  function timezones() {
+    return [
+      'Europe/Berlin','Europe/London','Europe/Paris','Europe/Rome','Europe/Madrid',
+      'Europe/Amsterdam','Europe/Vienna','Europe/Zurich','Europe/Warsaw','Europe/Prague',
+      'America/New_York','America/Chicago','America/Denver','America/Los_Angeles',
+      'America/Toronto','America/Sao_Paulo','Asia/Tokyo','Asia/Shanghai',
+      'Asia/Kolkata','Asia/Dubai','Asia/Singapore','Australia/Sydney',
+      'Pacific/Auckland','UTC',
+    ];
+  }
+
+  loadEvent();
+</script>
+</body>
+</html>

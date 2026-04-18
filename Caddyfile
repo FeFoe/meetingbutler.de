@@ -6,6 +6,12 @@ meetingbutler.de, www.meetingbutler.de {
 		reverse_proxy app:3000
 	}
 
+	# Meeting management pages → termin.html (JS reads UID from path)
+	handle /termin/* {
+		rewrite * /termin.html
+		file_server
+	}
+
 	# Clean URLs: /impressum → /impressum.html etc.
 	handle {
 		try_files {path} {path}.html /index.html
