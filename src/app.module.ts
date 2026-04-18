@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { BullModule } from '@nestjs/bull';
@@ -13,6 +13,8 @@ import { EventsModule } from './events/events.module';
 import { QueueModule } from './queue/queue.module';
 import { AdminModule } from './admin/admin.module';
 import { PdfModule } from './pdf/pdf.module';
+import { AuthModule } from './auth/auth.module';
+import { GeoBlockMiddleware } from './common/geo-block.middleware';
 
 @Module({
   imports: [
@@ -49,6 +51,7 @@ import { PdfModule } from './pdf/pdf.module';
     EventsModule,
     AdminModule,
     PdfModule,
+    AuthModule,
   ],
   providers: [
     {
@@ -57,4 +60,10 @@ import { PdfModule } from './pdf/pdf.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(GeoBlockMiddleware)
+      .forRoutes({ path: 'api/auth/register', method: RequestMethod.POST });
+  }
+}
