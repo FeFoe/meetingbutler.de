@@ -49,10 +49,11 @@
 
   <footer class="border-t border-gray-100 py-8">
     <div class="max-w-2xl mx-auto px-6 flex gap-6 text-sm text-gray-400">
-      <span>© 2025 Meetingbutler</span>
+      <span>© <span id="footer-year"></span> Meetingbutler</span>
       <a href="/" class="hover:text-gray-600">Startseite</a>
       <a href="/datenschutz" class="hover:text-gray-600">Datenschutz</a>
     </div>
   </footer>
+<script>document.getElementById('footer-year').textContent = new Date().getFullYear();</script>
 </body>
 </html>

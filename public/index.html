@@ -428,13 +428,14 @@
 <!-- ── FOOTER ────────────────────────────────────── -->
 <footer>
   <div class="foot-inner">
-    <span>© 2025 Meetingbutler</span>
+    <span>© <span id="footer-year"></span> Meetingbutler</span>
     <div class="foot-links">
       <a href="/impressum">Impressum</a>
       <a href="/datenschutz">Datenschutz</a>
     </div>
   </div>
 </footer>
+<script>document.getElementById('footer-year').textContent = new Date().getFullYear();</script>
 
 </body>
 </html>
