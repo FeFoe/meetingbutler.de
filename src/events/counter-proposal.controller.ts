@@ -4,7 +4,7 @@ import { PrismaService } from '../common/prisma.service';
 import { IcsService } from '../ics/ics.service';
 import { EmailSendService } from '../email/email-send.service';
 
-@Controller('api/events/counter')
+@Controller('events/counter')
 export class CounterProposalController {
   constructor(
     private prisma: PrismaService,

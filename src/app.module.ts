@@ -64,6 +64,6 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(GeoBlockMiddleware)
-      .forRoutes({ path: 'api/auth/register', method: RequestMethod.POST });
+      .forRoutes({ path: 'auth/register', method: RequestMethod.POST });
   }
 }

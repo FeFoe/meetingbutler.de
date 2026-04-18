@@ -8,7 +8,7 @@ class RegisterDto {
   email: string;
 }
 
-@Controller('api/auth')
+@Controller('auth')
 export class AuthController {
   constructor(private auth: AuthService) {}
 
