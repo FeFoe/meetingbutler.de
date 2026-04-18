@@ -8,7 +8,8 @@ import * as fs from 'fs';
 import sanitize from 'sanitize-filename';
 import { PrismaService } from '../common/prisma.service';
 import { ImapPollerService } from './imap-poller.service';
-import { QUEUE_EMAIL_INGEST, QUEUE_EVENT_MATCH } from '../queue/queue.module';
+import { IcsService } from '../ics/ics.service';
+import { QUEUE_EMAIL_INGEST, QUEUE_EVENT_MATCH, QUEUE_COUNTER_PROPOSAL } from '../queue/queue.module';
 
 const UPLOADS_DIR = path.join(process.cwd(), 'data', 'uploads');
 
@@ -19,7 +20,9 @@ export class ImapIngestProcessor {
   constructor(
     private prisma: PrismaService,
     private imapPoller: ImapPollerService,
+    private icsService: IcsService,
     @InjectQueue(QUEUE_EVENT_MATCH) private matchQueue: Queue,
+    @InjectQueue(QUEUE_COUNTER_PROPOSAL) private counterQueue: Queue,
   ) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
   }
@@ -86,6 +89,25 @@ export class ImapIngestProcessor {
       where: { id: rawEmail.id },
       data: { processed: true },
     });
+
+    // Detect iTIP COUNTER — route to dedicated processor, skip event-match
+    const calAtt = parsed.attachments?.find(
+      (a) => a.contentType?.includes('text/calendar') || a.filename?.endsWith('.ics'),
+    );
+    if (calAtt) {
+      const counter = this.icsService.parseCounter(calAtt.content.toString('utf8'));
+      if (counter) {
+        await this.counterQueue.add('process-counter', {
+          uid: counter.uid,
+          proposedStart: counter.proposedStart.toISOString(),
+          proposedEnd: counter.proposedEnd.toISOString(),
+          senderEmail: fromAddr,
+          rawEmailId: rawEmail.id,
+        });
+        this.logger.log(`Routed COUNTER for uid=${counter.uid} from ${fromAddr} to counter-proposal queue`);
+        return;
+      }
+    }
 
     // Enqueue for event matching
     await this.matchQueue.add('match-or-create', {

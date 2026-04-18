@@ -229,6 +229,49 @@ export class EmailSendService {
     return outgoingMessageId;
   }
 
+  async sendSimpleMail(to: string, subject: string, text: string): Promise<void> {
+    const fromEmail = this.config.get<string>('DEFAULT_FROM_EMAIL', 'meetings@meetingbutler.de');
+    const fromName  = this.config.get<string>('DEFAULT_FROM_NAME', 'Meetingbutler');
+    await this.transporter.sendMail({ from: `"${fromName}" <${fromEmail}>`, to, subject, text });
+  }
+
+  async sendCounterNotification(event: any, proposal: any): Promise<void> {
+    const tz = event.timezone || 'Europe/Berlin';
+    const origStart = DateTime.fromJSDate(new Date(event.startDatetime)).setZone(tz);
+    const newStart  = DateTime.fromJSDate(new Date(proposal.proposedStart)).setZone(tz);
+    const newEnd    = DateTime.fromJSDate(new Date(proposal.proposedEnd)).setZone(tz);
+    const baseUrl   = this.config.get<string>('APP_BASE_URL', 'https://meetingbutler.de');
+    const acceptUrl  = `${baseUrl}/api/events/counter/${proposal.token}/accept`;
+    const declineUrl = `${baseUrl}/api/events/counter/${proposal.token}/decline`;
+
+    const body = [
+      `${proposal.proposerEmail} schlägt einen neuen Termin vor:`,
+      ``,
+      `Vorher: ${origStart.toFormat('dd. LLLL yyyy · HH:mm')}`,
+      `Neu:    ${newStart.toFormat('dd. LLLL yyyy · HH:mm')}–${newEnd.toFormat('HH:mm')}`,
+      ``,
+      `Termin annehmen:  ${acceptUrl}`,
+      `Ablehnen:         ${declineUrl}`,
+      ``,
+      `Oder antworten Sie einfach auf diese Email.`,
+      `— Meetingbutler.de`,
+    ].join('\n');
+
+    await this.sendSimpleMail(
+      event.organizerEmail,
+      `[Meetingbutler] Neuer Terminvorschlag: ${event.title}`,
+      body,
+    );
+  }
+
+  async sendCounterDeclineNotification(event: any, proposal: any): Promise<void> {
+    await this.sendSimpleMail(
+      proposal.proposerEmail,
+      `[Meetingbutler] Terminvorschlag abgelehnt: ${event.title}`,
+      `Ihr Terminvorschlag für "${event.title}" wurde abgelehnt.\n— Meetingbutler.de`,
+    );
+  }
+
   async verifySmtp(): Promise<boolean> {
     try {
       await this.transporter.verify();

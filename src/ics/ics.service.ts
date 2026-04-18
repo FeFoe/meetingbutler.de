@@ -164,6 +164,25 @@ export class IcsService {
     return result.join('\r\n');
   }
 
+  parseCounter(icsString: string): { uid: string; proposedStart: Date; proposedEnd: Date } | null {
+    if (!icsString.includes('METHOD:COUNTER')) return null;
+    const uid = /^UID:(.+)$/m.exec(icsString)?.[1]?.trim();
+    const dtstart = /^DTSTART(?:;[^:]+)?:(.+)$/m.exec(icsString)?.[1]?.trim();
+    const dtend   = /^DTEND(?:;[^:]+)?:(.+)$/m.exec(icsString)?.[1]?.trim();
+    if (!uid || !dtstart || !dtend) return null;
+    const tzidMatch = /^DTSTART;TZID=([^:]+):/m.exec(icsString);
+    const tz = tzidMatch?.[1] ?? 'UTC';
+    const parse = (s: string) => {
+      const isUtc = s.endsWith('Z');
+      const clean = s.replace('Z', '');
+      const fmt = clean.includes('T') ? "yyyyMMdd'T'HHmmss" : 'yyyyMMdd';
+      return isUtc
+        ? DateTime.fromFormat(clean, fmt, { zone: 'UTC' }).toJSDate()
+        : DateTime.fromFormat(clean, fmt, { zone: tz }).toJSDate();
+    };
+    return { uid, proposedStart: parse(dtstart), proposedEnd: parse(dtend) };
+  }
+
   validateIcs(ics: string): boolean {
     const required = [
       'BEGIN:VCALENDAR',

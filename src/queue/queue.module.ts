@@ -6,6 +6,7 @@ export const QUEUE_LLM_EXTRACT = 'llm-extract';
 export const QUEUE_EVENT_MATCH = 'event-match';
 export const QUEUE_ICS_GENERATE = 'ics-generate';
 export const QUEUE_EMAIL_SEND = 'email-send';
+export const QUEUE_COUNTER_PROPOSAL = 'counter-proposal';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ export const QUEUE_EMAIL_SEND = 'email-send';
       { name: QUEUE_EVENT_MATCH },
       { name: QUEUE_ICS_GENERATE },
       { name: QUEUE_EMAIL_SEND },
+      { name: QUEUE_COUNTER_PROPOSAL },
     ),
   ],
   exports: [BullModule],

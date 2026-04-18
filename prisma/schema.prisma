@@ -38,11 +38,27 @@ model Event {
   user           User?         @relation(fields: [userId], references: [id])
   rawEmail       RawEmail?     @relation(fields: [sourceEmailId], references: [id])
   thread         EmailThread?  @relation(fields: [threadId], references: [id])
-  attachments    Attachment[]
-  eventDetails   EventDetail?
-  auditLogs      AuditLog[]
+  attachments      Attachment[]
+  eventDetails     EventDetail?
+  auditLogs        AuditLog[]
+  counterProposals CounterProposal[]
 
   @@map("events")
+}
+
+model CounterProposal {
+  id            String   @id @default(cuid())
+  token         String   @unique @default(cuid())
+  eventId       String
+  event         Event    @relation(fields: [eventId], references: [id])
+  proposerEmail String
+  proposedStart DateTime
+  proposedEnd   DateTime
+  status        String   @default("pending")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("counter_proposals")
 }
 
 model RawEmail {
