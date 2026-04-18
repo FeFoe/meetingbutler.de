@@ -31,44 +31,53 @@ export class EmailSendService {
     const smtpAdminUser = this.config.get<string>('SMTP_ADMIN_USER');
     const smtpAdminPass = this.config.get<string>('SMTP_ADMIN_PASSWORD');
 
-    this.transporter = nodemailer.createTransport({
-      host: this.config.get<string>('SMTP_HOST'),
-      port: parseInt(this.config.get<string>('SMTP_PORT', '465'), 10),
-      secure: this.config.get<string>('SMTP_SECURE', 'true') === 'true',
-      auth: {
-        user: smtpUser || smtpAdminUser,
-        pass: smtpPass || smtpAdminPass,
-      },
-    });
+    this.transporter = this.createTransporter(smtpUser || smtpAdminUser, smtpPass || smtpAdminPass);
 
-    this.initTransporter(smtpUser, smtpAdminUser, smtpAdminPass).catch((err) =>
+    this.initTransporter(smtpUser, smtpPass, smtpAdminUser, smtpAdminPass).catch((err) =>
       this.logger.error(`SMTP initialization failed: ${err.message}`, err.stack),
     );
   }
 
+  private createTransporter(user: string, pass: string, port?: number, secure?: boolean): nodemailer.Transporter {
+    const smtpPort = port ?? parseInt(this.config.get<string>('SMTP_PORT', '465'), 10);
+    const smtpSecure = secure ?? (this.config.get<string>('SMTP_SECURE', 'true') === 'true');
+    return nodemailer.createTransport({
+      host: this.config.get<string>('SMTP_HOST'),
+      port: smtpPort,
+      secure: smtpSecure,
+      auth: { user, pass },
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 30_000,
+    });
+  }
+
   private async initTransporter(
     smtpUser: string,
+    smtpPass: string,
     smtpAdminUser: string,
     smtpAdminPass: string,
   ): Promise<void> {
-    try {
-      await this.transporter.verify();
-      this.logger.log(`SMTP authenticated as ${smtpUser || smtpAdminUser}`);
-    } catch {
-      this.logger.warn(`Meetings SMTP failed, falling back to admin account`);
-      this.transporter = nodemailer.createTransport({
-        host: this.config.get<string>('SMTP_HOST'),
-        port: parseInt(this.config.get<string>('SMTP_PORT', '465'), 10),
-        secure: this.config.get<string>('SMTP_SECURE', 'true') === 'true',
-        auth: { user: smtpAdminUser, pass: smtpAdminPass },
-      });
+    const candidates = [
+      { user: smtpUser, pass: smtpPass, port: 465, secure: true },
+      { user: smtpUser, pass: smtpPass, port: 587, secure: false },
+      { user: smtpAdminUser, pass: smtpAdminPass, port: 465, secure: true },
+      { user: smtpAdminUser, pass: smtpAdminPass, port: 587, secure: false },
+    ].filter((c) => c.user && c.pass);
+
+    for (const { user, pass, port, secure } of candidates) {
       try {
-        await this.transporter.verify();
-        this.logger.log(`SMTP fallback authenticated as ${smtpAdminUser}`);
-      } catch (fallbackErr) {
-        this.logger.error(`SMTP verification failed for both accounts: ${fallbackErr.message}`);
+        const t = this.createTransporter(user, pass, port, secure);
+        await t.verify();
+        this.transporter = t;
+        this.logger.log(`SMTP authenticated as ${user} on port ${port}`);
+        return;
+      } catch (err) {
+        this.logger.warn(`SMTP ${user}:${port} failed: ${err.message}`);
       }
     }
+
+    this.logger.error('SMTP verification failed for all candidates — emails will not be sent');
   }
 
   private buildEmailBody(event: any, isUpdate: boolean, isCancellation: boolean, details: any): string {
