@@ -36,6 +36,11 @@ export interface ExtractedEvent {
   event_type: string;
 }
 
+export interface ExtractResult {
+  event: ExtractedEvent;
+  tokensUsed: number;
+}
+
 export interface UpdateDiff {
   title?: string;
   start_datetime?: string;
@@ -57,7 +62,7 @@ export class LlmService {
     this.client = new OpenAI({ apiKey: config.get<string>('OPENAI_KEY') });
   }
 
-  async extractEvent(subject: string, bodyText: string): Promise<ExtractedEvent | null> {
+  async extractEvent(subject: string, bodyText: string): Promise<ExtractResult | null> {
     const now = DateTime.now().setZone('Europe/Berlin');
     const prompt = `You are an expert personal assistant and calendar manager. A user has forwarded an email to you. Your job is to:
 1. Extract every factual detail from the email
@@ -230,8 +235,9 @@ Return JSON with all fields populated:
         ...(extracted.important_details || {}),
       };
 
-      this.logger.log(`LLM extracted: "${extracted.title}" (${extracted.event_type}) confidence=${extracted.confidence}`);
-      return extracted;
+      const tokensUsed = response.usage?.total_tokens ?? 0;
+      this.logger.log(`LLM extracted: "${extracted.title}" (${extracted.event_type}) confidence=${extracted.confidence} tokens=${tokensUsed}`);
+      return { event: extracted, tokensUsed };
     } catch (err) {
       this.logger.error(`LLM extraction failed: ${err.message}`, err.stack);
       return null;

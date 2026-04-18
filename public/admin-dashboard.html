@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin – Meetingbutler</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0b1120;
+      --accent: #3b7eff;
+      --sand: #f4f2ee;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+    }
+    body { font-family: 'Outfit', sans-serif; background: #f9fafb; color: var(--navy); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+    header {
+      background: var(--navy); padding: 1rem 1.5rem;
+      display: flex; align-items: center; gap: .7rem;
+    }
+    .logo-name { font-weight: 700; font-size: .95rem; color: rgba(255,255,255,.9); text-decoration: none; }
+    .badge { background: var(--accent); color: #fff; font-size: .65rem; font-weight: 700;
+             padding: .15rem .45rem; border-radius: 4px; letter-spacing: .06em; }
+
+    .page { max-width: 900px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+    /* ── LOGIN ── */
+    .login-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 14px;
+      padding: 2rem 2rem 1.75rem; max-width: 360px; margin: 3rem auto;
+    }
+    .login-card h2 { font-size: 1.1rem; margin-bottom: 1.25rem; }
+    .login-card input {
+      width: 100%; padding: .6rem .85rem; border: 1px solid var(--border);
+      border-radius: 8px; font-size: .95rem; font-family: inherit;
+      margin-bottom: .75rem; outline: none;
+    }
+    .login-card input:focus { border-color: var(--accent); }
+    .login-card button {
+      width: 100%; background: var(--accent); color: #fff; border: none;
+      border-radius: 8px; padding: .65rem; font-size: .95rem;
+      font-family: inherit; font-weight: 600; cursor: pointer;
+    }
+    .login-card button:hover { background: #2563eb; }
+    .error-msg { color: #ef4444; font-size: .85rem; margin-top: .6rem; min-height: 1.2em; }
+
+    /* ── SUMMARY CARDS ── */
+    .summary {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem; margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+    }
+    .stat-card .label {
+      font-size: .72rem; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .07em; margin-bottom: .35rem;
+    }
+    .stat-card .value { font-size: 1.75rem; font-weight: 700; color: var(--navy); }
+
+    /* ── TABLE ── */
+    .table-wrap {
+      background: #fff; border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: #f9fafb; }
+    th {
+      padding: .75rem 1rem; text-align: left;
+      font-size: .72rem; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .07em;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer; user-select: none; white-space: nowrap;
+    }
+    th:hover { color: var(--navy); }
+    td { padding: .75rem 1rem; font-size: .9rem; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f9fafb; }
+    .name { font-weight: 600; }
+    .email { color: var(--muted); font-size: .8rem; margin-top: .1rem; }
+    .num { font-variant-numeric: tabular-nums; }
+    .empty { padding: 2rem; text-align: center; color: var(--muted); }
+
+    #content { display: none; }
+  </style>
+</head>
+<body>
+<header>
+  <a href="/" class="logo-name">Meetingbutler</a>
+  <span class="badge">ADMIN</span>
+</header>
+
+<div class="page">
+  <!-- Login -->
+  <div class="login-card" id="login-card">
+    <h2>Admin-Zugang</h2>
+    <input type="password" id="pw-input" placeholder="Passwort"
+           onkeydown="if(event.key==='Enter') login()"/>
+    <button onclick="login()">Anmelden</button>
+    <div class="error-msg" id="error-msg"></div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="content">
+    <div class="summary" id="summary"></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortBy('name')">Nutzer <span id="sort-name"></span></th>
+            <th onclick="sortBy('eventCount')">Events <span id="sort-eventCount">↓</span></th>
+            <th onclick="sortBy('tokensUsed')">Tokens <span id="sort-tokensUsed"></span></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  let allUsers = [];
+  let sortKey = 'eventCount';
+  let sortAsc = false;
+
+  async function login() {
+    const pw = document.getElementById('pw-input').value.trim();
+    if (!pw) return;
+
+    document.getElementById('error-msg').textContent = '';
+
+    try {
+      const res = await fetch(`/api/admin/stats?password=${encodeURIComponent(pw)}`);
+      if (res.status === 401) {
+        document.getElementById('error-msg').textContent = 'Falsches Passwort';
+        return;
+      }
+      if (!res.ok) throw new Error('Serverfehler (' + res.status + ')');
+      const data = await res.json();
+      renderDashboard(data);
+      document.getElementById('login-card').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+    } catch (e) {
+      document.getElementById('error-msg').textContent = e.message;
+    }
+  }
+
+  function renderDashboard(data) {
+    const s = data.summary;
+    document.getElementById('summary').innerHTML = `
+      <div class="stat-card">
+        <div class="label">Nutzer</div>
+        <div class="value">${s.totalUsers}</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Events</div>
+        <div class="value">${s.totalEvents}</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Tokens</div>
+        <div class="value">${s.totalTokens.toLocaleString('de-DE')}</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Kosten (ca.)</div>
+        <div class="value">€${s.estimatedCostEur.toFixed(2)}</div>
+      </div>
+    `;
+    allUsers = data.users;
+    renderTable();
+  }
+
+  function renderTable() {
+    // Update sort indicators
+    ['name', 'eventCount', 'tokensUsed'].forEach(k => {
+      const el = document.getElementById('sort-' + k);
+      if (el) el.textContent = k === sortKey ? (sortAsc ? '↑' : '↓') : '';
+    });
+
+    if (allUsers.length === 0) {
+      document.getElementById('tbody').innerHTML =
+        '<tr><td colspan="3" class="empty">Keine verifizierten Nutzer vorhanden.</td></tr>';
+      return;
+    }
+
+    const sorted = [...allUsers].sort((a, b) => {
+      const va = sortKey === 'name'
+        ? (a.firstName + a.lastName).toLowerCase()
+        : a[sortKey];
+      const vb = sortKey === 'name'
+        ? (b.firstName + b.lastName).toLowerCase()
+        : b[sortKey];
+      if (va === vb) return 0;
+      return sortAsc ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
+    });
+
+    document.getElementById('tbody').innerHTML = sorted.map(u => `
+      <tr>
+        <td>
+          <div class="name">${esc(u.firstName)} ${esc(u.lastName)}</div>
+          <div class="email">${esc(u.email)}</div>
+        </td>
+        <td class="num">${u.eventCount}</td>
+        <td class="num">${u.tokensUsed.toLocaleString('de-DE')}</td>
+      </tr>
+    `).join('');
+  }
+
+  function sortBy(key) {
+    if (sortKey === key) {
+      sortAsc = !sortAsc;
+    } else {
+      sortKey = key;
+      sortAsc = false;
+    }
+    renderTable();
+  }
+
+  function esc(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+</script>
+</body>
+</html>

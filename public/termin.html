@@ -76,18 +76,6 @@
     .field.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
     @media (max-width: 500px) { .field.row-2 { grid-template-columns: 1fr; } }
 
-    /* ── DETAILS TOGGLE ── */
-    .details-toggle {
-      display: flex; align-items: center; gap: .5rem;
-      font-size: .85rem; font-weight: 600; color: var(--accent);
-      cursor: pointer; user-select: none;
-      padding: .5rem 0;
-    }
-    .details-toggle .arrow { transition: transform .2s; }
-    .details-toggle.open .arrow { transform: rotate(90deg); }
-    .details-extra { display: none; }
-    .details-extra.open { display: flex; flex-direction: column; gap: .75rem; margin-top: .5rem; }
-
     /* ── ACTIONS ── */
     .actions { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: 1.75rem; }
     .btn {
@@ -158,11 +146,6 @@
     </div>
   </div>
 
-  <!-- Extra details -->
-  <div id="extra-card" class="card" style="display:none">
-    <div class="card-header"><h2>Weitere Details</h2></div>
-    <div class="card-body" id="extra-fields"></div>
-  </div>
 
   <!-- Actions -->
   <div class="actions" id="actions" style="display:none">
@@ -194,7 +177,6 @@
       document.getElementById('status-banner').className = 'status-banner cancelled';
       document.getElementById('status-banner').textContent = '❌ ' + e.message;
       document.getElementById('main-fields').innerHTML = '<p style="color:var(--muted);font-size:.95rem">Der Termin konnte nicht geladen werden. Bitte überprüfe den Link.</p>';
-      document.getElementById('extra-card').style.display = 'none';
       document.getElementById('actions').style.display = 'none';
     }
   }
@@ -251,48 +233,10 @@
       </div>
       <div class="field">
         <label>Beschreibung</label>
-        <textarea id="f-description" rows="3" ${isCancelled ? 'disabled' : ''}>${esc(e.description || '')}</textarea>
+        <textarea id="f-description" rows="8" placeholder="Beschreibung bearbeiten…" ${isCancelled ? 'disabled' : ''}>${esc(e.description || '')}</textarea>
       </div>
     `;
 
-    // Extra detail fields
-    const extraCard = document.getElementById('extra-card');
-    const extraFields = document.getElementById('extra-fields');
-    extraCard.style.display = 'block';
-
-    const extras = [
-      ['f-bookingCode',  'Buchungscode',          d.bookingCode],
-      ['f-price',        'Preis',                 d.price],
-      ['f-checkIn',      'Check-in',              d.checkIn],
-      ['f-checkOut',     'Check-out',             d.checkOut],
-      ['f-flightNumber', 'Flugnummer / Zug',      d.flightNumber],
-      ['f-seat',         'Sitz',                  d.seat],
-      ['f-gate',         'Gate / Gleis',          d.gate],
-      ['f-accessCodes',  'Zugangscodes',          d.accessCodes],
-      ['f-cancellationPolicy','Stornierung',      d.cancellationPolicy],
-      ['f-address',      'Adresse',               d.address],
-      ['f-contact',      'Kontakt',               d.contact],
-      ['f-parking',      'Parkplatz',             d.parking],
-      ['f-dietary',      'Verpflegung',           d.dietary],
-      ['f-agenda',       'Agenda',                d.agenda],
-      ['f-notes',        'Notizen',               d.notes],
-      ['f-extra',        'Sonstiges',             d.extra],
-    ];
-
-    const toggleHtml = `
-      <div class="details-toggle" id="details-toggle" onclick="toggleDetails()">
-        <span class="arrow">▶</span> Weitere Details anzeigen
-      </div>
-      <div class="details-extra" id="details-extra">
-        ${extras.map(([id, label, val]) => `
-          <div class="field">
-            <label>${label}</label>
-            <input id="${id}" type="text" value="${esc(val || '')}" placeholder="—" ${isCancelled ? 'disabled' : ''}/>
-          </div>
-        `).join('')}
-      </div>
-    `;
-    extraFields.innerHTML = toggleHtml;
 
     // Actions
     const actionsEl = document.getElementById('actions');
@@ -300,13 +244,6 @@
     if (isCancelled) {
       actionsEl.innerHTML = '<p style="color:var(--muted);font-size:.9rem">Dieser Termin wurde abgesagt und kann nicht mehr bearbeitet werden.</p>';
     }
-  }
-
-  function toggleDetails() {
-    const toggle = document.getElementById('details-toggle');
-    const extra = document.getElementById('details-extra');
-    toggle.classList.toggle('open');
-    extra.classList.toggle('open');
   }
 
   // ── Save ───────────────────────────────────────────
@@ -322,28 +259,12 @@
     }
 
     const payload = {
-      title:              val('f-title'),
-      startDatetime:      toIso(val('f-start')),
-      endDatetime:        toIso(val('f-end')),
-      timezone:           val('f-tz'),
-      location:           val('f-location') || null,
-      description:        val('f-description') || null,
-      bookingCode:        val('f-bookingCode') || null,
-      price:              val('f-price') || null,
-      checkIn:            val('f-checkIn') || null,
-      checkOut:           val('f-checkOut') || null,
-      flightNumber:       val('f-flightNumber') || null,
-      seat:               val('f-seat') || null,
-      gate:               val('f-gate') || null,
-      accessCodes:        val('f-accessCodes') || null,
-      cancellationPolicy: val('f-cancellationPolicy') || null,
-      address:            val('f-address') || null,
-      contact:            val('f-contact') || null,
-      parking:            val('f-parking') || null,
-      dietary:            val('f-dietary') || null,
-      agenda:             val('f-agenda') || null,
-      notes:              val('f-notes') || null,
-      extra:              val('f-extra') || null,
+      title:         val('f-title'),
+      startDatetime: toIso(val('f-start')),
+      endDatetime:   toIso(val('f-end')),
+      timezone:      val('f-tz'),
+      location:      val('f-location') || null,
+      description:   val('f-description') || null,
     };
 
     try {
