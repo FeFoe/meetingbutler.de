@@ -119,11 +119,13 @@ export class EventMatchProcessor {
     attachmentIds: string[],
   ) {
     // Extract event data via LLM
-    const extracted = await this.llm.extractEvent(subject, bodyText);
-    if (!extracted) {
+    const extractResult = await this.llm.extractEvent(subject, bodyText);
+    if (!extractResult) {
       this.logger.warn(`LLM extraction failed for email ${rawEmailId}`);
       return;
     }
+    const extracted = extractResult.event;
+    const tokensUsed = extractResult.tokensUsed;
 
     // Idempotency: if this job is retried after a crash, reuse the existing thread/event
     const existingThread = await this.prisma.emailThread.findUnique({
@@ -172,6 +174,7 @@ export class EventMatchProcessor {
         sourceEmailId: rawEmailId,
         threadId: thread.id,
         status: 'active',
+        tokensUsed,
       },
     });
 
