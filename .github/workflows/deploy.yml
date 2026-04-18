@@ -10,26 +10,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  test:
-    name: Integration Tests (on server)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run tests via SSH
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: root
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            set -e
-            cd /opt/meetingbutler.de
-            echo "-> Running integration tests inside container..."
-            docker compose exec -T app node scripts/test-pipeline-mock.js
-
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-    needs: test
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
@@ -40,6 +23,9 @@ jobs:
           script: |
             set -e
             cd /opt/meetingbutler.de
+
+            echo "-> Pulling latest code..."
+            git pull origin main
 
             echo "-> Tagging current image as rollback target..."
             docker tag meetingbutler:latest meetingbutler:previous 2>/dev/null || true
@@ -67,6 +53,9 @@ jobs:
                 exit 1
               fi
             done
+
+            echo "-> Running integration tests..."
+            docker compose exec -T app node scripts/test-pipeline-mock.js
 
             docker compose ps
             echo "Deployed successfully!"

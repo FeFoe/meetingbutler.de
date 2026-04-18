@@ -35,8 +35,8 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY prisma ./prisma
-COPY scripts/docker-entrypoint.sh ./docker-entrypoint.sh
-RUN chmod +x ./docker-entrypoint.sh
+COPY scripts ./scripts
+RUN chmod +x ./scripts/docker-entrypoint.sh
 
 # Create data directories
 RUN mkdir -p /app/data/uploads
@@ -53,5 +53,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=5 \
   CMD wget -qO- http://localhost:3000/api/admin/health || exit 1
 
-ENTRYPOINT ["dumb-init", "--", "/app/docker-entrypoint.sh"]
+ENTRYPOINT ["dumb-init", "--", "/app/scripts/docker-entrypoint.sh"]
 CMD ["node", "dist/main"]
