@@ -1,0 +1,73 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Integration Tests (on server)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run tests via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd /opt/meetingbutler.de
+            git pull origin main
+            echo "-> Running integration tests..."
+            node scripts/test-pipeline-mock.js
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd /opt/meetingbutler.de
+
+            echo "-> Tagging current image as rollback target..."
+            docker tag meetingbutler:latest meetingbutler:previous 2>/dev/null || true
+
+            echo "-> Building new Docker image..."
+            docker build -t meetingbutler:latest .
+
+            echo "-> Starting services..."
+            docker compose up -d --remove-orphans --force-recreate
+
+            echo "-> Health check..."
+            sleep 8
+            for i in 1 2 3; do
+              STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/admin/health || echo "000")
+              if [ "$STATUS" = "200" ]; then
+                echo "Health check passed (attempt $i)"
+                break
+              fi
+              echo "Health check attempt $i failed (HTTP $STATUS), retrying..."
+              sleep 5
+              if [ "$i" = "3" ]; then
+                echo "ERROR: Health check failed after 3 attempts — rolling back!"
+                docker tag meetingbutler:previous meetingbutler:latest
+                docker compose up -d --remove-orphans --force-recreate
+                exit 1
+              fi
+            done
+
+            docker compose ps
+            echo "Deployed successfully!"
