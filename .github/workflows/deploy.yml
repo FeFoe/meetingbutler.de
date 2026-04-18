@@ -1,0 +1,29 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd /opt/meetingbutler.de
+            echo "-> Pulling latest code..."
+            git pull origin main
+            echo "-> Building Docker image..."
+            docker build -t meetingbutler:latest .
+            echo "-> Starting services..."
+            docker compose up -d --remove-orphans --force-recreate
+            echo "-> Waiting for app to be healthy..."
+            sleep 5
+            docker compose ps
