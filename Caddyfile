@@ -1,19 +1,13 @@
 meetingbutler.de, www.meetingbutler.de {
-	# Static pages: route clean URLs to .html files
-	@impressum path /impressum
-	rewrite @impressum /impressum.html
-
-	@datenschutz path /datenschutz
-	rewrite @datenschutz /datenschutz.html
+	root * /srv
 
 	# API → NestJS
 	handle /api/* {
 		reverse_proxy app:3000
 	}
 
-	# Everything else → static files from /srv
+	# Clean URLs: /impressum → /impressum.html etc.
 	handle {
-		root * /srv
 		try_files {path} {path}.html /index.html
 		file_server
 	}
