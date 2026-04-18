@@ -24,6 +24,14 @@ jobs:
             set -e
             cd /opt/meetingbutler.de
             git pull origin main
+              echo "-> Install dependencies"
+            npm ci --omit=dev
+          
+            echo "-> Prisma generate"
+            npx prisma generate
+          
+            echo "-> Running integration tests..."
+            node scripts/test-pipeline-mock.js
             echo "-> Running integration tests..."
             node scripts/test-pipeline-mock.js
 
