@@ -36,22 +36,21 @@ jobs:
             echo "-> Starting services..."
             docker compose up -d --remove-orphans --force-recreate
 
-            echo "-> Health check (waiting up to 60s for app to start)..."
-            sleep 15
-            for i in 1 2 3 4 5 6; do
-              STATUS=$(docker compose exec -T app wget -qO- http://localhost:3000/api/admin/health > /dev/null 2>&1 && echo "200" || echo "000")
-              if [ "$STATUS" = "200" ]; then
-                echo "Health check passed (attempt $i)"
+            echo "-> Waiting for app to become healthy (up to 90s)..."
+            for i in $(seq 1 18); do
+              STATUS=$(docker inspect --format='{{.State.Health.Status}}' meetingbutler-app 2>/dev/null || echo "missing")
+              echo "  attempt $i: $STATUS"
+              if [ "$STATUS" = "healthy" ]; then
+                echo "Health check passed!"
                 break
               fi
-              echo "Health check attempt $i failed, retrying in 10s..."
-              sleep 10
-              if [ "$i" = "6" ]; then
-                echo "ERROR: Health check failed after 6 attempts — rolling back!"
+              if [ "$i" = "18" ]; then
+                echo "ERROR: App not healthy after 90s — rolling back!"
                 docker tag meetingbutler:previous meetingbutler:latest
                 docker compose up -d --remove-orphans --force-recreate
                 exit 1
               fi
+              sleep 5
             done
 
             echo "-> Running integration tests..."
