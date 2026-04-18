@@ -136,7 +136,7 @@ export class EventMatchProcessor {
       const existingEvent = existingThread.events[0];
       const storedDetails = await this.prisma.eventDetail.findUnique({ where: { eventId: existingEvent.id } });
       const relevantAttachmentIds = await this.filterAttachments(attachmentIds);
-      const pdfBuffer = this.pdf.generate(existingEvent, bodyText, storedDetails);
+      const pdfBuffer = await this.pdf.generate(existingEvent, bodyText, storedDetails);
       const icsContent = this.ics.generate(existingEvent, extracted.participants || [], storedDetails);
       await this.emailSend.sendEventEmail({
         to: fromAddress, isUpdate: false, event: existingEvent,

@@ -4,11 +4,14 @@ import { DateTime } from 'luxon';
 
 @Injectable()
 export class PdfService {
-  generate(event: any, rawEmailBody: string, details: any): Buffer {
+  async generate(event: any, rawEmailBody: string, details: any): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
 
     doc.on('data', (chunk) => chunks.push(chunk));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
 
     const tz = event.timezone || 'Europe/Berlin';
     const startDt = DateTime.fromJSDate(new Date(event.startDatetime)).setZone(tz);
@@ -111,7 +114,6 @@ export class PdfService {
       .text('Erstellt von Meetingbutler.de', 50, footerY, { align: 'center', width: doc.page.width - 100 });
 
     doc.end();
-
-    return Buffer.concat(chunks);
+    }); // end Promise
   }
 }
