@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const logger = WinstonModule.createLogger({
@@ -22,6 +23,12 @@ async function bootstrap() {
   });
 
   const app = await NestFactory.create(AppModule, { logger });
+  app.use(helmet());
+  app.enableCors({
+    origin: ['https://meetingbutler.de', 'https://www.meetingbutler.de'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    credentials: false,
+  });
   app.setGlobalPrefix('api');
 
   const port = process.env.PORT || 3000;
