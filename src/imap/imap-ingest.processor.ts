@@ -9,6 +9,7 @@ import sanitize from 'sanitize-filename';
 import { PrismaService } from '../common/prisma.service';
 import { ImapPollerService } from './imap-poller.service';
 import { IcsService } from '../ics/ics.service';
+import { AuthService } from '../auth/auth.service';
 import { QUEUE_EMAIL_INGEST, QUEUE_EVENT_MATCH, QUEUE_COUNTER_PROPOSAL } from '../queue/queue.module';
 
 const UPLOADS_DIR = path.join(process.cwd(), 'data', 'uploads');
@@ -21,6 +22,7 @@ export class ImapIngestProcessor {
     private prisma: PrismaService,
     private imapPoller: ImapPollerService,
     private icsService: IcsService,
+    private authService: AuthService,
     @InjectQueue(QUEUE_EVENT_MATCH) private matchQueue: Queue,
     @InjectQueue(QUEUE_COUNTER_PROPOSAL) private counterQueue: Queue,
   ) {
@@ -54,6 +56,21 @@ export class ImapIngestProcessor {
     const existing = await this.prisma.rawEmail.findUnique({ where: { messageId } });
     if (existing) {
       this.logger.warn(`Email ${messageId} already processed, skipping`);
+      return;
+    }
+
+    // Domain-block: silently drop emails from blocked regions
+    if (this.authService.isDomainBlocked(fromAddr)) {
+      this.logger.log(`Blocked email from geo-restricted domain: ${fromAddr}`);
+      return;
+    }
+
+    // Whitelist gate: only verified users can use the service
+    const sender = await this.prisma.user.findUnique({
+      where: { email: fromAddr, verified: true },
+    });
+    if (!sender) {
+      this.logger.log(`Ignoring email from unregistered sender: ${fromAddr}`);
       return;
     }
 
