@@ -113,7 +113,7 @@ export class EventsService {
 
     // Regenerate ICS and send updated email
     const icsContent = this.ics.generate(updatedEvent, [], updatedDetails);
-    const pdfBuffer = this.pdf.generate(updatedEvent, '', updatedDetails);
+    const pdfBuffer = await this.pdf.generate(updatedEvent, '', updatedDetails);
 
     await this.emailSend.sendEventEmail({
       to: event.organizerEmail,

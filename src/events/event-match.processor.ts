@@ -236,7 +236,7 @@ export class EventMatchProcessor {
 
     // Generate PDF summary
     this.logger.log('Generating PDF...');
-    const pdfBuffer = this.pdf.generate(event, bodyText, storedDetails);
+    const pdfBuffer = await this.pdf.generate(event, bodyText, storedDetails);
     this.logger.log(`PDF generated: ${pdfBuffer?.length ?? 0} bytes`);
 
     // Generate ICS
@@ -355,7 +355,7 @@ export class EventMatchProcessor {
     const updatedDetails = await this.prisma.eventDetail.findUnique({ where: { eventId: existingEvent.id } });
 
     // Generate PDF summary
-    const pdfBuffer = this.pdf.generate(updatedEvent, instruction, updatedDetails);
+    const pdfBuffer = await this.pdf.generate(updatedEvent, instruction, updatedDetails);
 
     // Generate ICS
     const icsContent = this.ics.generate(updatedEvent, [], updatedDetails);
