@@ -1,4 +1,4 @@
-import { Process, Processor } from '@nestjs/bull';
+import { OnQueueFailed, Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue, Job } from 'bull';
@@ -7,6 +7,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import sanitize from 'sanitize-filename';
 import { PrismaService } from '../common/prisma.service';
+import { ImapPollerService } from './imap-poller.service';
 import { QUEUE_EMAIL_INGEST, QUEUE_EVENT_MATCH } from '../queue/queue.module';
 
 const UPLOADS_DIR = path.join(process.cwd(), 'data', 'uploads');
@@ -17,9 +18,16 @@ export class ImapIngestProcessor {
 
   constructor(
     private prisma: PrismaService,
+    private imapPoller: ImapPollerService,
     @InjectQueue(QUEUE_EVENT_MATCH) private matchQueue: Queue,
   ) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  }
+
+  @OnQueueFailed()
+  async onFailed(job: Job<{ uid: number; source: string }>, err: Error) {
+    this.logger.error(`Ingest job ${job.id} failed (uid=${job.data.uid}): ${err.message}`);
+    await this.imapPoller.moveToFailed(job.data.uid);
   }
 
   @Process('process-email')

@@ -13,6 +13,7 @@ export interface SendEventEmailOptions {
   icsContent: string;
   attachmentIds: string[];
   eventDetails?: any;
+  pdfBuffer?: Buffer;
 }
 
 @Injectable()
@@ -71,87 +72,45 @@ export class EmailSendService {
     }
   }
 
-  private formatDetailLine(label: string, value: string | null | undefined): string {
-    return value && value.trim() ? `${label}: ${value.trim()}` : '';
-  }
-
   private buildEmailBody(event: any, isUpdate: boolean, details: any): string {
     const tz = event.timezone || 'Europe/Berlin';
     const startDt = DateTime.fromJSDate(new Date(event.startDatetime)).setZone(tz);
     const endDt = DateTime.fromJSDate(new Date(event.endDatetime)).setZone(tz);
 
-    const startStr = startDt.toFormat("cccc, dd. LLLL yyyy 'at' HH:mm ZZZZ");
-    const endStr = endDt.toFormat('HH:mm ZZZZ');
+    const sameDay = startDt.toISODate() === endDt.toISODate();
+    const dateStr = sameDay
+      ? `${startDt.toFormat('dd. LLLL yyyy')} · ${startDt.toFormat('HH:mm')}–${endDt.toFormat('HH:mm')}`
+      : `${startDt.toFormat('dd. LLLL yyyy')} – ${endDt.toFormat('dd. LLLL yyyy')}`;
 
-    const statusNote = isUpdate
-      ? 'This event has been updated. Your calendar invite is attached.'
-      : 'A new calendar event has been created. The invite is attached.';
+    const action = isUpdate ? '📅 Termin aktualisiert' : '📅 Neuer Termin';
 
     const lines: string[] = [];
-    lines.push(statusNote);
+    lines.push(`${action}: ${event.title}`);
     lines.push('');
-    lines.push('─────────────────────────────────');
-    lines.push(`${event.title}`);
-    lines.push('─────────────────────────────────');
-    lines.push('');
-    lines.push(`📅 When:  ${startStr} – ${endStr}`);
-    if (event.location) lines.push(`📍 Where: ${event.location}`);
-    lines.push('');
-
-    if (event.description) {
-      lines.push('About this event:');
-      lines.push(event.description);
-      lines.push('');
-    }
+    lines.push(`🗓  ${dateStr}`);
+    if (event.location) lines.push(`📍 ${event.location}`);
 
     if (details) {
-      const sections: string[] = [];
-
-      const booking = [
-        this.formatDetailLine('Booking code', details.bookingCode),
-        this.formatDetailLine('Organizer', details.organizer),
-        this.formatDetailLine('Contact', details.contact),
-        this.formatDetailLine('Price', details.price),
-        this.formatDetailLine('Cancellation policy', details.cancellationPolicy),
-      ].filter(Boolean);
-      if (booking.length) sections.push(...['--- Booking ---', ...booking]);
-
-      const access = [
-        this.formatDetailLine('Check-in', details.checkIn),
-        this.formatDetailLine('Check-out', details.checkOut),
-        this.formatDetailLine('Address', details.address),
-        this.formatDetailLine('Parking', details.parking),
-        this.formatDetailLine('Access codes', details.accessCodes),
-      ].filter(Boolean);
-      if (access.length) sections.push(...['--- Access & Location ---', ...access]);
-
-      const onsite = [
-        this.formatDetailLine('Dietary / Meals', details.dietary),
-        this.formatDetailLine('Dress code', details.dressCode),
-        this.formatDetailLine('Agenda', details.agenda),
-      ].filter(Boolean);
-      if (onsite.length) sections.push(...['--- On-site ---', ...onsite]);
-
-      const travel = [
-        this.formatDetailLine('Flight / Train', details.flightNumber),
-        this.formatDetailLine('Seat', details.seat),
-        this.formatDetailLine('Gate / Platform', details.gate),
-      ].filter(Boolean);
-      if (travel.length) sections.push(...['--- Travel ---', ...travel]);
-
-      if (details.notes) sections.push(...['--- Notes ---', details.notes]);
-      if (details.extra) sections.push(...['--- Additional info ---', details.extra]);
-
-      if (sections.length) {
-        lines.push('');
-        lines.push(...sections);
+      const d = details;
+      if (d.checkIn || d.checkOut) {
+        const parts = [d.checkIn && `Check-in: ${d.checkIn}`, d.checkOut && `Check-out: ${d.checkOut}`].filter(Boolean);
+        lines.push(`⏰ ${parts.join('   ·   ')}`);
       }
+      if (d.bookingCode) lines.push(`🔖 ${d.bookingCode}`);
+      if (d.price)       lines.push(`💶 ${d.price}`);
+      if (d.accessCodes) lines.push(`🔑 ${d.accessCodes}`);
+      if (d.flightNumber) lines.push(`✈️  ${d.flightNumber}${d.seat ? `  · Sitz: ${d.seat}` : ''}${d.gate ? `  · Gate: ${d.gate}` : ''}`);
+      if (d.cancellationPolicy) lines.push(`⚠️  ${d.cancellationPolicy}`);
+    }
+
+    if (event.description) {
+      lines.push('');
+      lines.push(event.description);
     }
 
     lines.push('');
-    lines.push('─────────────────────────────────');
-    lines.push('Open the attached .ics file to add this to your calendar.');
-    lines.push('Powered by Meetingbutler.de');
+    lines.push('Alle Details im beigefügten PDF. .ics-Datei öffnen um Termin zu importieren.');
+    lines.push('— Meetingbutler.de');
 
     return lines.join('\n');
   }
@@ -159,7 +118,7 @@ export class EmailSendService {
   private static readonly EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   async sendEventEmail(options: SendEventEmailOptions): Promise<void> {
-    const { to, isUpdate, event, icsContent, attachmentIds, eventDetails } = options;
+    const { to, isUpdate, event, icsContent, attachmentIds, eventDetails, pdfBuffer } = options;
 
     if (!EmailSendService.EMAIL_REGEX.test(to)) {
       throw new BadRequestException(`Invalid recipient email address: ${to}`);
@@ -179,9 +138,18 @@ export class EmailSendService {
     // Load file attachments
     const fileAttachments: any[] = [];
 
+    // PDF summary
+    if (pdfBuffer) {
+      fileAttachments.push({
+        filename: `${event.title.replace(/[^a-z0-9äöüÄÖÜ]/gi, '_')}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf',
+      });
+    }
+
     // ICS file
     fileAttachments.push({
-      filename: `${event.title.replace(/[^a-z0-9]/gi, '_')}.ics`,
+      filename: `${event.title.replace(/[^a-z0-9äöüÄÖÜ]/gi, '_')}.ics`,
       content: Buffer.from(icsContent),
       contentType: 'text/calendar; charset=utf-8; method=REQUEST',
     });

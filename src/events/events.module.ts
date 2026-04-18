@@ -6,6 +6,7 @@ import { EventsService } from './events.service';
 import { LlmModule } from '../llm/llm.module';
 import { IcsModule } from '../ics/ics.module';
 import { EmailModule } from '../email/email.module';
+import { PdfModule } from '../pdf/pdf.module';
 import {
   QUEUE_EVENT_MATCH,
   QUEUE_LLM_EXTRACT,
@@ -24,6 +25,7 @@ import {
     LlmModule,
     IcsModule,
     EmailModule,
+    PdfModule,
   ],
   providers: [EventMatchProcessor, EventsService],
   controllers: [EventsController],

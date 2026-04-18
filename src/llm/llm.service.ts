@@ -81,48 +81,23 @@ FIELD INSTRUCTIONS
   "Hotel Stay – Marriott Berlin", "Flight LH441 Munich→London", "Team Kickoff – Acme GmbH"
 
 "description"
-  THIS IS THE MOST IMPORTANT FIELD. Write a thorough, well-organized plain-text briefing.
-  Structure it with clear headings (use ALL CAPS headers like OVERVIEW, WHAT TO BRING, etc.).
+  Write a SHORT, scannable summary using emojis. Maximum 8-10 lines.
+  Only include the most important facts a person needs at a glance.
+  Use this format (include only relevant lines for the event type):
 
-  ALWAYS include these sections when applicable:
+  📍 [Venue / Location full address]
+  🗓 [Date range, e.g. "23.–26. April 2026"]
+  ⏰ [Check-in: HH:MM · Check-out: HH:MM]  OR  [Departure: HH:MM · Arrival: HH:MM]
+  🛏 [Room type / Seat / Class]
+  🔖 [Booking code / Confirmation number / Ticket number]
+  💶 [Total price with currency and what's included, e.g. "EUR 345 inkl. Frühstück"]
+  🚗 [Parking info if relevant]
+  📶 [WiFi / Access codes if present]
+  📞 [Contact phone / email]
+  ⚠️ [Cancellation deadline or one critical note, if present]
 
-  OVERVIEW
-    What is this event? Who organized it? What is the purpose?
-    Include all reference numbers, codes, and IDs from the email.
-
-  SCHEDULE
-    All times and dates — check-in, check-out, departure, arrival, session times.
-    Be explicit about timezone.
-
-  LOCATION & ACCESS
-    Full address, how to get there (infer if needed), parking, public transport hints.
-    Any access codes, PINs, wifi passwords, door codes.
-
-  WHAT TO BRING / PREPARE
-    List everything needed: ID, confirmation printout, payment method, dress code, equipment.
-    For hotels: always mention bringing ID and payment card.
-    For flights: remind about passport, check-in deadline, luggage limits if mentioned.
-    For meetings: mention any materials, agenda items, or preparation needed.
-    INFER standard requirements for the event type even if not mentioned.
-
-  BOOKING & PAYMENT
-    Price, payment method, booking codes, confirmation numbers, cancellation policy.
-
-  CONTACT
-    Phone numbers, emails, names of responsible staff or organizers.
-
-  INCLUDED / SERVICES
-    What is included (meals, parking, transfers, equipment).
-
-  IMPORTANT NOTES
-    Cancellation deadlines, late check-in procedures, special instructions, anything unusual.
-
-  ACTION ITEMS (if any)
-    Concrete things the user must do: confirm attendance, call ahead, bring documents, etc.
-
-  Do NOT use bullet points starting with "-". Use plain lines or numbered lists.
-  Be thorough. Include everything from the email. Infer realistic details for the event type.
-  The description is the single source of truth — make it self-contained.
+  DO NOT include obvious or generic statements. No full sentences. No headers. No bullet dashes.
+  Only facts from the email. Skip lines that have no data.
 
 "start_datetime"
   ISO 8601 with timezone offset. Use the event start (check-in time for hotels, departure for flights).

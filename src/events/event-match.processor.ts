@@ -6,6 +6,7 @@ import { PrismaService } from '../common/prisma.service';
 import { LlmService } from '../llm/llm.service';
 import { IcsService } from '../ics/ics.service';
 import { EmailSendService } from '../email/email-send.service';
+import { PdfService } from '../pdf/pdf.service';
 import {
   QUEUE_EVENT_MATCH,
   QUEUE_LLM_EXTRACT,
@@ -23,8 +24,20 @@ export class EventMatchProcessor {
     private llm: LlmService,
     private ics: IcsService,
     private emailSend: EmailSendService,
+    private pdf: PdfService,
     @InjectQueue(QUEUE_EVENT_MATCH) private matchQueue: Queue,
   ) {}
+
+  /** Returns true for decorative images (logos, banners, icons) that should not be attached. */
+  private isDecorativeAttachment(filename: string, contentType: string, size: number): boolean {
+    if (!contentType.startsWith('image/')) return false;
+    const name = (filename || '').toLowerCase();
+    // Small images are almost always decorative
+    if (size < 30_000) return true;
+    // Common logo/decoration name patterns
+    if (/logo|banner|header|footer|signature|icon|spacer|bg|background|decoration/.test(name)) return true;
+    return false;
+  }
 
   @Process('match-or-create')
   async handle(
@@ -196,7 +209,13 @@ export class EventMatchProcessor {
     // Load stored details for ICS and email enrichment
     const storedDetails = await this.prisma.eventDetail.findUnique({ where: { eventId: event.id } });
 
-    // Generate ICS with full details embedded
+    // Filter out decorative image attachments
+    const relevantAttachmentIds = await this.filterAttachments(attachmentIds);
+
+    // Generate PDF summary
+    const pdfBuffer = this.pdf.generate(event, bodyText, storedDetails);
+
+    // Generate ICS
     const icsContent = this.ics.generate(event, extracted.participants || [], storedDetails);
 
     // Send reply email
@@ -205,8 +224,9 @@ export class EventMatchProcessor {
       isUpdate: false,
       event,
       icsContent,
-      attachmentIds,
+      attachmentIds: relevantAttachmentIds,
       eventDetails: storedDetails,
+      pdfBuffer,
     });
 
     this.logger.log(`Sent new event email to ${fromAddress}`);
@@ -291,20 +311,23 @@ export class EventMatchProcessor {
 
     this.logger.log(`Updated event id=${existingEvent.id} sequence=${newSequence}`);
 
-    // Load existing attachments for the event
+    // Load existing attachments for the event (filtered)
     const existingAttachments = await this.prisma.attachment.findMany({
       where: { eventId: existingEvent.id },
     });
-
     const allAttachmentIds = [
       ...existingAttachments.map((a) => a.id),
       ...attachmentIds,
     ];
+    const relevantAttachmentIds = await this.filterAttachments(allAttachmentIds);
 
     // Load updated details for ICS enrichment
     const updatedDetails = await this.prisma.eventDetail.findUnique({ where: { eventId: existingEvent.id } });
 
-    // Generate ICS with full details embedded
+    // Generate PDF summary
+    const pdfBuffer = this.pdf.generate(updatedEvent, instruction, updatedDetails);
+
+    // Generate ICS
     const icsContent = this.ics.generate(updatedEvent, [], updatedDetails);
 
     // Send updated invite
@@ -313,10 +336,21 @@ export class EventMatchProcessor {
       isUpdate: true,
       event: updatedEvent,
       icsContent,
-      attachmentIds: allAttachmentIds,
+      attachmentIds: relevantAttachmentIds,
       eventDetails: updatedDetails,
+      pdfBuffer,
     });
 
     this.logger.log(`Sent update email to ${fromAddress}`);
+  }
+
+  private async filterAttachments(attachmentIds: string[]): Promise<string[]> {
+    if (!attachmentIds.length) return [];
+    const attachments = await this.prisma.attachment.findMany({
+      where: { id: { in: attachmentIds } },
+    });
+    return attachments
+      .filter((a) => !this.isDecorativeAttachment(a.filename, a.contentType, a.size))
+      .map((a) => a.id);
   }
 }
