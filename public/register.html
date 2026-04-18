@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Meetingbutler – Registrieren</title>
+  <meta name="description" content="Registriere dich bei Meetingbutler und leite Meeting-E-Mails automatisch in Kalendertermine um."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0b1120; --accent: #3b7eff; --sand: #f4f2ee;
+      --muted: #6b7280; --border: #e5e7eb; --white: #ffffff;
+    }
+    body { font-family: 'Outfit', sans-serif; background: var(--sand); color: var(--navy); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 1rem; }
+    .card { background: var(--white); border-radius: 20px; padding: 2.5rem 2rem; width: 100%; max-width: 420px; box-shadow: 0 4px 32px rgba(0,0,0,.08); }
+    .logo { display: flex; align-items: center; gap: .5rem; text-decoration: none; margin-bottom: 2rem; }
+    .logo-name { font-size: 1.1rem; font-weight: 700; color: var(--navy); }
+    h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: .4rem; }
+    .sub { color: var(--muted); font-size: .95rem; margin-bottom: 1.75rem; line-height: 1.5; }
+    .field { margin-bottom: 1rem; }
+    label { display: block; font-size: .875rem; font-weight: 600; margin-bottom: .35rem; }
+    input { width: 100%; border: 1.5px solid var(--border); border-radius: 8px; padding: .7rem .9rem; font-family: inherit; font-size: 1rem; color: var(--navy); outline: none; transition: border-color .15s; }
+    input:focus { border-color: var(--accent); }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+    .btn { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: .85rem; font-family: inherit; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: .5rem; transition: opacity .15s; }
+    .btn:hover { opacity: .88; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .msg { margin-top: 1rem; padding: .75rem 1rem; border-radius: 8px; font-size: .9rem; display: none; }
+    .msg.success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+    .msg.error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .back { margin-top: 1.5rem; text-align: center; font-size: .875rem; color: var(--muted); }
+    .back a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <a href="/" class="logo">
+      <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
+        <rect width="40" height="40" rx="10" fill="#3b7eff"/>
+        <rect x="10" y="10" width="20" height="20" rx="4" fill="white" fill-opacity=".15"/>
+        <rect x="13" y="17" width="14" height="2" rx="1" fill="white"/>
+        <rect x="13" y="21" width="10" height="2" rx="1" fill="white" fill-opacity=".7"/>
+        <rect x="15" y="10" width="2" height="4" rx="1" fill="white"/>
+        <rect x="23" y="10" width="2" height="4" rx="1" fill="white"/>
+      </svg>
+      <span class="logo-name">Meetingbutler</span>
+    </a>
+
+    <h1>Kostenlos registrieren</h1>
+    <p class="sub">Nach der Registrierung kannst du Meeting-E-Mails an <strong>meetings@meetingbutler.de</strong> weiterleiten und bekommst automatisch .ics-Kalendereinladungen zurück.</p>
+
+    <form id="form" novalidate>
+      <div class="row">
+        <div class="field">
+          <label for="firstName">Vorname</label>
+          <input type="text" id="firstName" name="firstName" required autocomplete="given-name" placeholder="Max"/>
+        </div>
+        <div class="field">
+          <label for="lastName">Nachname</label>
+          <input type="text" id="lastName" name="lastName" required autocomplete="family-name" placeholder="Mustermann"/>
+        </div>
+      </div>
+      <div class="field">
+        <label for="email">E-Mail-Adresse</label>
+        <input type="email" id="email" name="email" required autocomplete="email" placeholder="max@beispiel.de"/>
+      </div>
+      <button type="submit" class="btn" id="btn">Registrieren</button>
+      <div class="msg" id="msg"></div>
+    </form>
+
+    <p class="back"><a href="/">← Zurück zur Startseite</a></p>
+  </div>
+
+  <script>
+    const ERRORS = {
+      403: 'Service nicht verfügbar in deiner Region.',
+      400: 'E-Mail-Domain aus dieser Region nicht erlaubt.',
+      409: 'Diese E-Mail-Adresse ist bereits registriert und verifiziert.',
+    };
+
+    document.getElementById('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn');
+      const msg = document.getElementById('msg');
+      msg.style.display = 'none';
+      msg.className = 'msg';
+
+      const firstName = document.getElementById('firstName').value.trim();
+      const lastName  = document.getElementById('lastName').value.trim();
+      const email     = document.getElementById('email').value.trim();
+
+      if (!firstName || !lastName || !email) {
+        msg.textContent = 'Bitte alle Felder ausfüllen.';
+        msg.className = 'msg error';
+        msg.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Wird gesendet…';
+
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ firstName, lastName, email }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          msg.textContent = data.message || 'Bestätigungsmail gesendet. Bitte prüfe dein Postfach.';
+          msg.className = 'msg success';
+          document.getElementById('form').querySelectorAll('input').forEach(i => i.disabled = true);
+          btn.style.display = 'none';
+        } else {
+          msg.textContent = ERRORS[res.status] || data.message || 'Registrierung fehlgeschlagen. Bitte versuche es später erneut.';
+          msg.className = 'msg error';
+          btn.disabled = false;
+          btn.textContent = 'Registrieren';
+        }
+      } catch {
+        msg.textContent = 'Verbindungsfehler. Bitte versuche es später erneut.';
+        msg.className = 'msg error';
+        btn.disabled = false;
+        btn.textContent = 'Registrieren';
+      }
+      msg.style.display = 'block';
+    });
+  </script>
+</body>
+</html>
