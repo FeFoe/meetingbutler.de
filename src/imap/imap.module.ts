@@ -3,6 +3,7 @@ import { BullModule } from '@nestjs/bull';
 import { ImapPollerService } from './imap-poller.service';
 import { ImapIngestProcessor } from './imap-ingest.processor';
 import { IcsModule } from '../ics/ics.module';
+import { AuthModule } from '../auth/auth.module';
 import { QUEUE_EMAIL_INGEST, QUEUE_EVENT_MATCH, QUEUE_COUNTER_PROPOSAL } from '../queue/queue.module';
 
 @Module({
@@ -13,6 +14,7 @@ import { QUEUE_EMAIL_INGEST, QUEUE_EVENT_MATCH, QUEUE_COUNTER_PROPOSAL } from '.
       { name: QUEUE_COUNTER_PROPOSAL },
     ),
     IcsModule,
+    AuthModule,
   ],
   providers: [ImapPollerService, ImapIngestProcessor],
   exports: [ImapPollerService],
