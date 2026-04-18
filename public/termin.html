@@ -193,6 +193,9 @@
     } catch (e) {
       document.getElementById('status-banner').className = 'status-banner cancelled';
       document.getElementById('status-banner').textContent = '❌ ' + e.message;
+      document.getElementById('main-fields').innerHTML = '<p style="color:var(--muted);font-size:.95rem">Der Termin konnte nicht geladen werden. Bitte überprüfe den Link.</p>';
+      document.getElementById('extra-card').style.display = 'none';
+      document.getElementById('actions').style.display = 'none';
     }
   }
 
