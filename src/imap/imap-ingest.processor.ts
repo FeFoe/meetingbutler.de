@@ -49,8 +49,8 @@ export class ImapIngestProcessor {
       ? parsed.references.join(' ')
       : (parsed.references as string) || null;
 
-    const fromAddr = this.extractAddress(parsed.from);
-    const toAddr = this.extractAddress(parsed.to);
+    const fromAddr = this.extractAddress(parsed.from).toLowerCase();
+    const toAddr = this.extractAddress(parsed.to).toLowerCase();
 
     // Check if already stored
     const existing = await this.prisma.rawEmail.findUnique({ where: { messageId } });

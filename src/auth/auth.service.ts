@@ -33,6 +33,7 @@ export class AuthService {
   }
 
   async register(firstName: string, lastName: string, email: string): Promise<void> {
+    email = email.toLowerCase().trim();
     if (this.isDomainBlocked(email)) {
       throw new BadRequestException('E-Mail-Domain aus gesperrter Region nicht erlaubt.');
     }
