@@ -55,8 +55,12 @@ export class ImapIngestProcessor {
     // Check if already stored
     const existing = await this.prisma.rawEmail.findUnique({ where: { messageId } });
     if (existing) {
-      this.logger.warn(`Email ${messageId} already processed, skipping`);
-      return;
+      // Pending emails are stored with processed=false + pendingSource; allow them to continue
+      if (existing.processed || !existing.pendingSource) {
+        this.logger.warn(`Email ${messageId} already processed, skipping`);
+        return;
+      }
+      this.logger.log(`Re-processing pending email ${messageId} for now-verified sender`);
     }
 
     // Domain-block: silently drop emails from blocked regions
@@ -65,29 +69,58 @@ export class ImapIngestProcessor {
       return;
     }
 
-    // Whitelist gate: only verified users can use the service
+    // Whitelist gate: only verified users can use the service.
+    // Unregistered senders: store the raw email with pendingSource so it can be
+    // retroactively processed after the sender verifies their account.
     const sender = await this.prisma.user.findUnique({
       where: { email: fromAddr, verified: true },
     });
+
     if (!sender) {
-      this.logger.log(`Ignoring email from unregistered sender: ${fromAddr}`);
+      this.logger.log(`Storing pending email from unregistered sender: ${fromAddr}`);
+      await this.prisma.rawEmail.upsert({
+        where: { messageId },
+        update: { pendingSource: source },
+        create: {
+          messageId,
+          inReplyTo,
+          references,
+          fromAddress: fromAddr,
+          toAddress: toAddr,
+          subject: parsed.subject || '(no subject)',
+          bodyText: parsed.text || null,
+          bodyHtml: parsed.html || null,
+          receivedAt: parsed.date || new Date(),
+          processed: false,
+          pendingSource: source,
+        },
+      });
       return;
     }
 
-    // Store raw email
-    const rawEmail = await this.prisma.rawEmail.create({
-      data: {
-        messageId,
-        inReplyTo,
-        references,
-        fromAddress: fromAddr,
-        toAddress: toAddr,
-        subject: parsed.subject || '(no subject)',
-        bodyText: parsed.text || null,
-        bodyHtml: parsed.html || null,
-        receivedAt: parsed.date || new Date(),
-      },
-    });
+    // Store or promote the raw email record
+    let rawEmail: { id: string };
+    if (existing) {
+      // Pending → full record: clear pendingSource, keep existing id
+      rawEmail = await this.prisma.rawEmail.update({
+        where: { id: existing.id },
+        data: { pendingSource: null },
+      });
+    } else {
+      rawEmail = await this.prisma.rawEmail.create({
+        data: {
+          messageId,
+          inReplyTo,
+          references,
+          fromAddress: fromAddr,
+          toAddress: toAddr,
+          subject: parsed.subject || '(no subject)',
+          bodyText: parsed.text || null,
+          bodyHtml: parsed.html || null,
+          receivedAt: parsed.date || new Date(),
+        },
+      });
+    }
 
     this.logger.log(`Stored raw email id=${rawEmail.id} messageId=${messageId}`);
 

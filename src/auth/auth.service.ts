@@ -1,7 +1,10 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 import { PrismaService } from '../common/prisma.service';
 import { EmailSendService } from '../email/email-send.service';
+import { QUEUE_EMAIL_INGEST } from '../queue/queue.module';
 
 const COUNTRY_TLDS: Record<string, string[]> = {
   RU: ['.ru', '.рф'],
@@ -13,12 +16,14 @@ const COUNTRY_TLDS: Record<string, string[]> = {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private readonly blockedTlds: string[];
 
   constructor(
     private prisma: PrismaService,
     private emailSend: EmailSendService,
     private config: ConfigService,
+    @InjectQueue(QUEUE_EMAIL_INGEST) private ingestQueue: Queue,
   ) {
     const countries = this.config
       .get<string>('BLOCKED_COUNTRIES', 'RU,CN,KP,IR,BY')
@@ -91,6 +96,22 @@ export class AuthService {
       where: { id: user.id },
       data: { verified: true, verificationToken: null },
     });
+
+    // Retroactively process any emails that arrived before the user verified
+    const pending = await this.prisma.rawEmail.findMany({
+      where: { fromAddress: user.email, processed: false, pendingSource: { not: null } },
+    });
+
+    if (pending.length > 0) {
+      this.logger.log(`Re-enqueueing ${pending.length} pending email(s) for newly verified user ${user.email}`);
+      for (const raw of pending) {
+        await this.ingestQueue.add(
+          'process-email',
+          { uid: 0, source: raw.pendingSource },
+          { jobId: `pending-${raw.id}` },
+        );
+      }
+    }
 
     return user.firstName;
   }

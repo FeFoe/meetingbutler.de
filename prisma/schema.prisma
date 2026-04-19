@@ -76,9 +76,10 @@ model RawEmail {
   bodyText    String?
   bodyHtml    String?
   receivedAt  DateTime    @default(now())
-  processed   Boolean     @default(false)
-  events      Event[]
-  attachments Attachment[]
+  processed      Boolean     @default(false)
+  pendingSource  String?
+  events         Event[]
+  attachments    Attachment[]
 
   @@map("raw_emails")
 }
