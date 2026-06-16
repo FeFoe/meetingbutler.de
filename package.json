@@ -40,7 +40,7 @@
     "luxon": "^3.4.4",
     "mailparser": "^3.7.0",
     "nest-winston": "^1.9.4",
-    "nodemailer": "^8.0.5",
+    "nodemailer": "^9.0.0",
     "openai": "^4.33.0",
     "pdfkit": "^0.18.0",
     "reflect-metadata": "^0.2.1",
@@ -63,5 +63,10 @@
     "prisma": "^5.10.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.3"
+  },
+  "overrides": {
+    "bull": {
+      "uuid": "$uuid"
+    }
   }
 }
