@@ -28,7 +28,8 @@ jobs:
             cd /opt/meetingbutler.de
 
             echo "-> Pulling latest code..."
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main
 
             echo "-> Tagging current image as rollback target..."
             docker tag meetingbutler:latest meetingbutler:previous 2>/dev/null || true
