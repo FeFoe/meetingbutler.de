@@ -2,6 +2,10 @@ import { Body, Controller, Get, Post, Query, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 class RegisterDto {
   firstName: string;
   lastName: string;
@@ -38,7 +42,7 @@ export class AuthController {
 </head>
 <body>
   <div class="card">
-    <h1>✅ E-Mail bestätigt, ${firstName}!</h1>
+    <h1>✅ E-Mail bestätigt, ${escapeHtml(firstName)}!</h1>
     <p>Du kannst jetzt E-Mails an <strong>meetings@meetingbutler.de</strong> weiterleiten und bekommst automatisch .ics-Kalendereinladungen zurück.</p>
     <a href="/">Zur Startseite</a>
   </div>
