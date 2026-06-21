@@ -14,21 +14,8 @@ services:
     depends_on:
       - app
 
-  migrate:
-    image: meetingbutler:latest
-    container_name: meetingbutler-migrate
-    restart: "no"
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - "node /app/node_modules/prisma/build/index.js migrate deploy"
-    environment:
-      DATABASE_URL: postgresql://meetingbutler:meetingbutler@postgres:5432/meetingbutler
-    depends_on:
-      postgres:
-        condition: service_healthy
-
   app:
-    image: meetingbutler:latest
+    image: ghcr.io/fefoe/meetingbutler.de:latest
     container_name: meetingbutler-app
     restart: unless-stopped
     environment:
@@ -57,6 +44,7 @@ services:
       DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL}
       DEFAULT_FROM_NAME: ${DEFAULT_FROM_NAME}
       OPENAI_KEY: ${OPENAI_KEY}
+      ADMIN_DASHBOARD_PASSWORD: ${ADMIN_DASHBOARD_PASSWORD}
     volumes:
       - uploads:/app/data/uploads
     depends_on:
@@ -64,8 +52,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
 
   postgres:
     image: postgres:16-alpine
@@ -95,6 +81,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: meetingbutler-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --cleanup --interval 300 meetingbutler-app
 
 volumes:
   pgdata:
