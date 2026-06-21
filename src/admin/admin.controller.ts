@@ -1,4 +1,5 @@
 import { Controller, Get, Headers, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { timingSafeEqual } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../common/prisma.service';
 import { AdminApiKeyGuard } from './admin-api-key.guard';
@@ -26,7 +27,9 @@ export class AdminController {
   @Get('stats')
   async stats(@Headers('x-admin-password') password: string) {
     const expected = this.config.get<string>('ADMIN_DASHBOARD_PASSWORD');
-    if (!expected || password !== expected) {
+    const pwBuf = Buffer.from(password ?? '');
+    const exBuf = Buffer.from(expected ?? '');
+    if (!expected || pwBuf.length !== exBuf.length || !timingSafeEqual(pwBuf, exBuf)) {
       throw new UnauthorizedException('Falsches Passwort');
     }
 
