@@ -67,6 +67,7 @@
   "overrides": {
     "bull": {
       "uuid": "$uuid"
-    }
+    },
+    "multer": "^2.2.0"
   }
 }
